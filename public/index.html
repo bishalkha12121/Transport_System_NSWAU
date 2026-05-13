@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TfNSW — Live Departures</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #002664;
+      --white:  #ffffff;
+      --off:    #F7F7F5;
+      --ink:    #111111;
+      --mid:    #555555;
+      --line:   #E0E0E0;
+      --mono:   'JetBrains Mono', monospace;
+      --sans:   'Inter', system-ui, sans-serif;
+
+      /* TfNSW official line colours */
+      --t1: #F5A81C;   /* North Shore / Western / Northern */
+      --t2: #0098CD;   /* Inner West & Leppington */
+      --t3: #F77F00;   /* Bankstown */
+      --t4: #EB4486;   /* Eastern Suburbs & Illawarra */
+      --t5: #C669A4;   /* Cumberland */
+      --t8: #00AF64;   /* Airport & South */
+      --t9: #D4292E;   /* Northern */
+      --bus:#00B5B8;
+      --ferry:#005AA3;
+      --lrt:#7E2A8E;
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: var(--sans);
+      background: var(--white);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* ─── Top Bar ─── */
+    .topbar {
+      background: var(--navy);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .nsw-logo {
+      background: var(--white);
+      color: var(--navy);
+      font-weight: 800;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.05em;
+    }
+    .wordmark-sep { opacity: 0.3; margin: 0 4px; }
+
+    .topbar-center {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .topbar-tab {
+      padding: 7px 18px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .topbar-tab:last-child { border-right: none; }
+    .topbar-tab.active { background: rgba(255,255,255,0.15); color: var(--white); }
+    .topbar-tab:hover { color: var(--white); }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .gps-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+    }
+    .gps-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #4ADE80;
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+      animation: gpspulse 2s infinite;
+    }
+    @keyframes gpspulse {
+      0%,100% { box-shadow: 0 0 0 2px rgba(74,222,128,0.3); }
+      50%      { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+    }
+    .clock { font-family: var(--mono); font-size: 13px; color: rgba(255,255,255,0.85); }
+
+    /* ─── Layout shell ─── */
+    .shell {
+      display: grid;
+      grid-template-columns: 300px 1fr 320px;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+    }
+
+    /* ─── Left panel ─── */
+    .left-panel {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .search-wrap {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .search-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1.5px solid var(--ink);
+      border-radius: 4px;
+      padding: 9px 12px;
+      background: var(--white);
+    }
+    .search-field input {
+      border: none; outline: none;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--ink);
+      width: 100%;
+      background: transparent;
+    }
+    .search-field input::placeholder { color: #999; }
+    .search-icon { color: #999; flex-shrink: 0; }
+
+    .panel-label {
+      padding: 12px 16px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mid);
+    }
+
+    /* Mode selector */
+    .mode-row {
+      display: flex;
+      padding: 0 16px 12px;
+      gap: 6px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 7px 0;
+      border: 1.5px solid var(--line);
+      border-radius: 4px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--mid);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-btn.on {
+      border-color: var(--navy);
+      color: var(--navy);
+      background: #EFF3FB;
+    }
+    .mode-btn-icon { display: block; font-size: 16px; margin-bottom: 2px; }
+
+    /* Stop list */
+    .stop-scroll { overflow-y: auto; flex: 1; }
+    .stop-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .stop-row:hover { background: var(--off); }
+    .stop-row.active { background: #EFF3FB; border-left: 3px solid var(--navy); padding-left: 13px; }
+    .stop-type-tag {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+    .tag-train  { background: var(--navy); color: var(--white); }
+    .tag-bus    { background: var(--bus);  color: var(--white); }
+    .tag-ferry  { background: var(--ferry);color: var(--white); }
+    .stop-details { flex: 1; min-width: 0; }
+    .stop-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stop-lines { font-size: 11px; color: var(--mid); margin-top: 2px; }
+    .stop-km { font-family: var(--mono); font-size: 11px; color: #aaa; flex-shrink: 0; }
+
+    /* ─── Centre panel ─── */
+    .centre-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .board-header {
+      padding: 20px 24px 0;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 14px;
+    }
+    .board-stop-name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .board-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 6px;
+    }
+    .board-meta-item { font-size: 12px; color: var(--mid); }
+    .board-meta-dot { color: var(--line); }
+    .refresh-time { font-family: var(--mono); font-size: 11px; color: var(--mid); }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .f-chip {
+      padding: 4px 12px;
+      border: 1.5px solid var(--line);
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--mid);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .f-chip.on { border-color: var(--ink); color: var(--ink); background: var(--ink); color: var(--white); }
+
+    /* Departure board */
+    .board-scroll { overflow-y: auto; flex: 1; }
+
+    .dir-group { }
+    .dir-heading {
+      padding: 10px 24px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mid);
+      background: var(--off);
+      border-bottom: 1px solid var(--line);
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dir-heading::before {
+      content: '';
+      display: block;
+      width: 16px; height: 1px;
+      background: var(--mid);
+    }
+
+    .dep-row {
+      display: grid;
+      grid-template-columns: 28px 100px 1fr 90px 70px 160px 100px;
+      align-items: center;
+      padding: 0 24px;
+      height: 56px;
+      border-bottom: 1px solid var(--line);
+      transition: background 0.1s;
+      cursor: pointer;
+      gap: 4px;
+    }
+    .dep-row:hover { background: var(--off); }
+
+    .line-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: 0.02em;
+    }
+    .line-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      flex-shrink: 0;
+    }
+
+    .dep-dest { }
+    .dep-dest-primary { font-size: 13px; font-weight: 600; }
+    .dep-dest-via { font-size: 11px; color: var(--mid); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .dep-time {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .dep-countdown {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .dep-countdown.now  { color: #DC2626; }
+    .dep-countdown.soon { color: #EA580C; }
+    .dep-countdown.ok   { color: #16A34A; }
+
+    .dep-platform {
+      font-size: 12px;
+      color: var(--mid);
+      font-family: var(--mono);
+    }
+
+    .dep-status { text-align: right; }
+    .status-tag {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-radius: 2px;
+    }
+    .status-tag.ontime    { border: 1px solid #16A34A; color: #16A34A; }
+    .status-tag.delayed   { border: 1px solid #EA580C; color: #EA580C; }
+    .status-tag.cancelled { background: #DC2626; color: var(--white); }
+
+    /* occ dots */
+    .occ-dots { display: flex; gap: 2px; align-items: center; margin-top: 3px; justify-content: flex-end; }
+    .occ-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+    .occ-dot.f-low  { background: #16A34A; }
+    .occ-dot.f-med  { background: #EA580C; }
+    .occ-dot.f-high { background: #DC2626; }
+
+    /* Mode icons in departure rows */
+    .dep-mode-icon {
+      font-size: 16px; line-height: 1; text-align: center;
+      opacity: 0.75; flex-shrink: 0;
+    }
+    .dir-heading.mode-train  { border-left: 3px solid var(--navy); }
+    .dir-heading.mode-metro  { border-left: 3px solid #009B77; }
+    .dir-heading.mode-bus    { border-left: 3px solid var(--bus); }
+    .dir-heading.mode-lrt    { border-left: 3px solid var(--lrt); }
+    .dir-heading.mode-ferry  { border-left: 3px solid var(--ferry); }
+
+    /* ─── Right panel ─── */
+    .right-panel {
+      border-left: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Map */
+    .map-area {
+      position: relative;
+      height: 220px;
+      background: #E8EEF4;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .map-svg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+    }
+    .map-overlay {
+      position: absolute;
+      bottom: 10px; left: 10px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      font-size: 11px;
+      border-radius: 3px;
+      color: var(--mid);
+    }
+    .map-overlay strong { color: var(--ink); display: block; margin-bottom: 2px; }
+
+    /* Alerts */
+    .alerts-section { flex: 1; overflow-y: auto; }
+    .section-head {
+      padding: 12px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mid);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .alert-count {
+      background: #DC2626;
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 2px;
+    }
+
+    .alert-card {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .alert-severity {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .sev-critical { color: #DC2626; }
+    .sev-warn     { color: #EA580C; }
+    .sev-info     { color: #2563EB; }
+
+    .alert-headline { font-size: 13px; font-weight: 600; line-height: 1.3; }
+    .alert-body-text { font-size: 12px; color: var(--mid); margin-top: 4px; line-height: 1.5; }
+    .alert-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .alert-lines { display: flex; gap: 4px; }
+    .alert-line-pip {
+      width: 20px; height: 5px;
+      border-radius: 1px;
+    }
+    .alert-time-text { font-family: var(--mono); font-size: 10px; color: #aaa; }
+
+    /* ─── Trip Planner ─── */
+    .trip-view { display: none; flex-direction: column; overflow: hidden; height: 100%; }
+    .trip-view.active { display: flex; }
+    .departures-view { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+    .departures-view.hidden { display: none; }
+
+    .trip-form-wrap {
+      padding: 20px 24px;
+      border-bottom: 2px solid var(--ink);
+      flex-shrink: 0;
+    }
+    .trip-form-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--mid); margin-bottom: 14px;
+    }
+    .trip-fields { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .trip-field-row { display: flex; align-items: center; gap: 10px; }
+    .trip-field-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--mid); width: 34px; flex-shrink: 0;
+    }
+    .trip-input-wrap {
+      flex: 1; position: relative;
+      border: 1.5px solid var(--line); border-radius: 4px;
+      display: flex; align-items: center;
+      background: var(--white); transition: border-color 0.15s;
+    }
+    .trip-input-wrap:focus-within { border-color: var(--ink); }
+    .trip-input-wrap input {
+      flex: 1; border: none; outline: none; padding: 9px 12px;
+      font-family: var(--sans); font-size: 13px; color: var(--ink);
+      background: transparent; min-width: 0;
+    }
+    .trip-input-wrap input::placeholder { color: #999; }
+    .gps-btn {
+      width: 32px; height: 32px; flex-shrink: 0;
+      border: none; background: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--mid); border-radius: 3px; margin-right: 2px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .gps-btn:hover { background: var(--off); color: var(--navy); }
+    .gps-btn.active { color: #16A34A; }
+    .trip-divider {
+      display: flex; align-items: center; margin: 6px 0 6px 44px; gap: 8px;
+    }
+    .swap-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 1.5px solid var(--line); background: var(--white);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--mid); font-size: 13px; transition: all 0.15s;
+    }
+    .swap-btn:hover { border-color: var(--ink); color: var(--ink); background: var(--off); }
+    .trip-divider-line { flex: 1; height: 1px; background: var(--line); }
+    .plan-btn {
+      margin-top: 14px; width: 100%; padding: 10px;
+      background: var(--navy); color: var(--white);
+      border: none; border-radius: 4px; cursor: pointer;
+      font-family: var(--sans); font-size: 13px; font-weight: 600;
+      letter-spacing: 0.03em; transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .plan-btn:hover { background: #003a8c; }
+    .plan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .plan-btn svg { flex-shrink: 0; }
+
+    /* Autocomplete */
+    .ac-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--white); border: 1.5px solid var(--ink);
+      border-radius: 4px; z-index: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      max-height: 200px; overflow-y: auto;
+    }
+    .ac-item {
+      padding: 9px 12px; font-size: 13px; cursor: pointer;
+      border-bottom: 1px solid var(--line); transition: background 0.1s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover { background: var(--off); }
+    .ac-mode-tag {
+      font-size: 10px; font-weight: 700; width: 18px; height: 18px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; background: var(--navy); color: var(--white);
+    }
+
+    /* Trip results */
+    .trip-results { flex: 1; overflow-y: auto; }
+    .trip-results-label {
+      padding: 12px 24px 8px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid);
+      border-bottom: 1px solid var(--line); background: var(--off);
+      border-top: 1px solid var(--line);
+    }
+    .journey-card {
+      padding: 16px 24px; border-bottom: 1px solid var(--line);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .journey-card:hover { background: var(--off); }
+    .journey-card.best { border-left: 3px solid var(--navy); padding-left: 21px; }
+    .journey-head {
+      display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px;
+    }
+    .journey-times {
+      font-family: var(--mono); font-size: 16px; font-weight: 600; letter-spacing: -0.02em;
+    }
+    .journey-arrow { color: var(--mid); font-size: 13px; }
+    .journey-dur { font-size: 13px; font-weight: 600; }
+    .journey-changes { font-size: 12px; color: var(--mid); margin-left: auto; }
+    .best-tag {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      background: var(--navy); color: var(--white); padding: 2px 6px; border-radius: 2px;
+    }
+    .leg-strip { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .leg-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: 700;
+      color: var(--white); letter-spacing: 0.02em;
+    }
+    .leg-pill.walk {
+      background: none; color: var(--mid); padding: 3px 2px;
+      font-size: 12px; font-weight: 400;
+    }
+    .leg-connector { color: var(--line); font-size: 14px; }
+    .leg-detail {
+      margin-top: 6px; font-size: 11px; color: var(--mid); line-height: 1.6;
+    }
+    .trip-empty {
+      padding: 40px 24px; text-align: center; color: var(--mid); font-size: 13px;
+    }
+    .trip-empty-icon { font-size: 32px; margin-bottom: 10px; }
+    .trip-loading {
+      padding: 40px 24px; text-align: center; color: var(--mid); font-size: 13px;
+    }
+    .spinner {
+      width: 24px; height: 24px; border: 2px solid var(--line);
+      border-top-color: var(--navy); border-radius: 50%;
+      animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Stats strip */
+    .stats-strip {
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      flex-shrink: 0;
+    }
+    .stat-cell {
+      padding: 12px 14px;
+      border-right: 1px solid var(--line);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-val { font-family: var(--mono); font-size: 20px; font-weight: 600; }
+    .stat-lbl { font-size: 10px; color: var(--mid); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-delta { font-size: 10px; margin-top: 1px; }
+    .up { color: #16A34A; }
+    .dn { color: #DC2626; }
+
+  </style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<header class="topbar">
+  <div class="wordmark">
+    <span class="nsw-logo">NSW</span>
+    <span class="wordmark-sep">|</span>
+    Transport for NSW
+    <span class="wordmark-sep">—</span>
+    Live Departures
+  </div>
+
+  <div class="topbar-center">
+    <div class="topbar-tab active">Overview</div>
+    <div class="topbar-tab">Trip Planner</div>
+    <div class="topbar-tab">Network</div>
+    <div class="topbar-tab">Alerts</div>
+    <div class="topbar-tab">Opal</div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="gps-indicator">
+      <div class="gps-dot"></div>
+      <span>Sydney CBD  −33.8688, 151.2093</span>
+    </div>
+    <div class="clock" id="clock">10:42:00</div>
+  </div>
+</header>
+
+<!-- ── Shell ── -->
+<div class="shell">
+
+  <!-- ── Left panel ── -->
+  <nav class="left-panel">
+    <div class="search-wrap">
+      <div class="search-field">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Stop name or number" />
+      </div>
+    </div>
+
+    <div class="panel-label">Mode</div>
+    <div class="mode-row">
+      <div class="mode-btn on"><span class="mode-btn-icon">🚆</span>Train</div>
+      <div class="mode-btn"><span class="mode-btn-icon">🚌</span>Bus</div>
+      <div class="mode-btn"><span class="mode-btn-icon">⛴</span>Ferry</div>
+      <div class="mode-btn"><span class="mode-btn-icon">🚊</span>LRT</div>
+    </div>
+
+    <div class="panel-label" id="nearbyLabel">Nearby — loading…</div>
+    <div class="stop-scroll" id="stopScroll">
+      <div style="padding:20px 16px;color:#aaa;font-size:12px">Loading nearby stops…</div>
+    </div>
+  </nav>
+
+  <!-- ── Centre panel ── -->
+  <main class="centre-panel">
+
+  <!-- Departures view (default) -->
+  <div class="departures-view">
+    <div class="board-header">
+      <div class="board-stop-name">Central Station</div>
+      <div class="board-meta">
+        <span class="board-meta-item">Platforms 1–25</span>
+        <span class="board-meta-dot">·</span>
+        <span class="board-meta-item">All lines</span>
+        <span class="board-meta-dot">·</span>
+        <span class="refresh-time">Updated 10:42:18</span>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="f-chip on">All</div>
+      <div class="f-chip">T1</div>
+      <div class="f-chip">T2</div>
+      <div class="f-chip">T3</div>
+      <div class="f-chip">T4</div>
+      <div class="f-chip">T8</div>
+      <div class="f-chip">T9</div>
+      <div class="f-chip">Bus</div>
+      <div class="f-chip">On time</div>
+      <div class="f-chip">Delayed</div>
+    </div>
+
+    <div class="board-scroll">
+
+      <!-- Direction heading -->
+      <div class="dir-group">
+        <div class="dir-heading">City & Eastern Suburbs</div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t4)"><span class="line-dot"></span>T4</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Bondi Junction</div>
+            <div class="dep-dest-via">via Airport, Green Square, Redfern</div>
+          </div>
+          <div class="dep-time">10:44</div>
+          <div class="dep-countdown now">2 min</div>
+          <div class="dep-platform">Plat 7</div>
+          <div class="dep-status">
+            <div class="status-tag ontime">On time</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-high"></div>
+              <div class="occ-dot f-high"></div>
+              <div class="occ-dot f-high"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t8)"><span class="line-dot"></span>T8</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Sutherland</div>
+            <div class="dep-dest-via">via Wolli Creek, Sydenham, Mascot</div>
+          </div>
+          <div class="dep-time">10:47</div>
+          <div class="dep-countdown soon">5 min</div>
+          <div class="dep-platform">Plat 11</div>
+          <div class="dep-status">
+            <div class="status-tag ontime">On time</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t4)"><span class="line-dot"></span>T4</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Cronulla</div>
+            <div class="dep-dest-via">via Airport, Sydenham, Woronora</div>
+          </div>
+          <div class="dep-time">10:58</div>
+          <div class="dep-countdown ok">16 min</div>
+          <div class="dep-platform">Plat 7</div>
+          <div class="dep-status">
+            <div class="status-tag delayed">+8 min</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 2 -->
+      <div class="dir-group">
+        <div class="dir-heading">Western & Inner West</div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t2)"><span class="line-dot"></span>T2</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Parramatta</div>
+            <div class="dep-dest-via">via Strathfield, Burwood, Auburn</div>
+          </div>
+          <div class="dep-time">10:49</div>
+          <div class="dep-countdown soon">7 min</div>
+          <div class="dep-platform">Plat 5</div>
+          <div class="dep-status">
+            <div class="status-tag ontime">On time</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-med"></div>
+              <div class="occ-dot f-med"></div>
+              <div class="occ-dot f-med"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t1)"><span class="line-dot"></span>T1</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Richmond</div>
+            <div class="dep-dest-via">via Parramatta, Blacktown, Richmond</div>
+          </div>
+          <div class="dep-time">11:02</div>
+          <div class="dep-countdown ok">20 min</div>
+          <div class="dep-platform">Plat 3</div>
+          <div class="dep-status">
+            <div class="status-tag ontime">On time</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t3)"><span class="line-dot"></span>T3</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Bankstown</div>
+            <div class="dep-dest-via">via Sydenham, Marrickville, Dulwich Hill</div>
+          </div>
+          <div class="dep-time">11:06</div>
+          <div class="dep-countdown ok">24 min</div>
+          <div class="dep-platform">Plat 19</div>
+          <div class="dep-status">
+            <div class="status-tag cancelled">Cancelled</div>
+            <div class="occ-dots">
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 3 -->
+      <div class="dir-group">
+        <div class="dir-heading">North Shore & Northern</div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t1)"><span class="line-dot"></span>T1</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Berowra</div>
+            <div class="dep-dest-via">via North Sydney, Chatswood, Hornsby</div>
+          </div>
+          <div class="dep-time">10:55</div>
+          <div class="dep-countdown ok">13 min</div>
+          <div class="dep-platform">Plat 9</div>
+          <div class="dep-status">
+            <div class="status-tag ontime">On time</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dep-row">
+          <div><span class="line-badge" style="background:var(--t9)"><span class="line-dot"></span>T9</span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">Gordon</div>
+            <div class="dep-dest-via">via Wynyard, North Sydney, Pymble</div>
+          </div>
+          <div class="dep-time">11:05</div>
+          <div class="dep-countdown ok">23 min</div>
+          <div class="dep-platform">Plat 10</div>
+          <div class="dep-status">
+            <div class="status-tag delayed">+3 min</div>
+            <div class="occ-dots">
+              <div class="occ-dot f-low"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+              <div class="occ-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /departures-view -->
+
+  <!-- Trip Planner view -->
+  <div class="trip-view" id="tripView">
+    <div class="trip-form-wrap">
+      <div class="trip-form-title">Plan your trip</div>
+      <div class="trip-fields">
+
+        <!-- From -->
+        <div class="trip-field-row">
+          <div class="trip-field-label">From</div>
+          <div class="trip-input-wrap" id="fromWrap">
+            <input id="fromInput" type="text" placeholder="Starting point or use GPS" autocomplete="off" />
+            <button class="gps-btn" id="gpsBtn" title="Use my location">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" opacity=".3"/></svg>
+            </button>
+            <div class="ac-list" id="fromAC" style="display:none"></div>
+          </div>
+        </div>
+
+        <!-- Swap divider -->
+        <div class="trip-divider">
+          <div class="trip-divider-line"></div>
+          <button class="swap-btn" id="swapBtn" title="Swap From / To">⇅</button>
+          <div class="trip-divider-line"></div>
+        </div>
+
+        <!-- To -->
+        <div class="trip-field-row">
+          <div class="trip-field-label">To</div>
+          <div class="trip-input-wrap" id="toWrap">
+            <input id="toInput" type="text" placeholder="Destination" autocomplete="off" />
+            <div class="ac-list" id="toAC" style="display:none"></div>
+          </div>
+        </div>
+
+      </div>
+      <button class="plan-btn" id="planBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M13 6l6 6-6 6"/></svg>
+        Plan Trip
+      </button>
+    </div>
+    <div class="trip-results" id="tripResults">
+      <div class="trip-empty">
+        <div class="trip-empty-icon">🗺️</div>
+        Enter your starting point and destination above
+      </div>
+    </div>
+  </div><!-- /trip-view -->
+
+  </main>
+
+  <!-- ── Right panel ── -->
+  <aside class="right-panel">
+
+    <!-- Map -->
+    <div class="map-area">
+      <svg class="map-svg" viewBox="0 0 320 220" preserveAspectRatio="xMidYMid slice">
+        <rect width="320" height="220" fill="#E8EEF4"/>
+        <!-- grid -->
+        <g stroke="#D0D9E4" stroke-width="0.5">
+          <line x1="0" y1="44" x2="320" y2="44"/>
+          <line x1="0" y1="88" x2="320" y2="88"/>
+          <line x1="0" y1="132" x2="320" y2="132"/>
+          <line x1="0" y1="176" x2="320" y2="176"/>
+          <line x1="64" y1="0" x2="64" y2="220"/>
+          <line x1="128" y1="0" x2="128" y2="220"/>
+          <line x1="192" y1="0" x2="192" y2="220"/>
+          <line x1="256" y1="0" x2="256" y2="220"/>
+        </g>
+        <!-- roads -->
+        <path d="M0 110 Q80 105 160 110 Q240 115 320 108" stroke="#C8D2DC" stroke-width="10" fill="none"/>
+        <path d="M160 0 L160 220" stroke="#C8D2DC" stroke-width="10" fill="none"/>
+        <path d="M0 60 Q100 55 200 65 Q280 72 320 58" stroke="#D4DCE4" stroke-width="6" fill="none"/>
+        <path d="M0 168 Q110 158 210 170 Q285 178 320 165" stroke="#D4DCE4" stroke-width="6" fill="none"/>
+        <path d="M65 0 L72 220" stroke="#D8E0E8" stroke-width="4" fill="none"/>
+        <path d="M255 0 L248 220" stroke="#D8E0E8" stroke-width="4" fill="none"/>
+        <!-- train line -->
+        <path d="M0 90 Q80 88 160 95 Q240 102 320 98" stroke="#002664" stroke-width="3" fill="none" stroke-dasharray="8,3"/>
+        <!-- stops -->
+        <circle cx="160" cy="110" r="9" fill="#002664" stroke="white" stroke-width="2"/>
+        <circle cx="72" cy="100" r="6" fill="#F5A81C" stroke="white" stroke-width="2"/>
+        <circle cx="248" cy="104" r="6" fill="#0098CD" stroke="white" stroke-width="2"/>
+        <circle cx="160" cy="62" r="5" fill="#00B5B8" stroke="white" stroke-width="2"/>
+        <circle cx="128" cy="168" r="5" fill="#EB4486" stroke="white" stroke-width="2"/>
+        <!-- user dot -->
+        <circle cx="160" cy="110" r="18" fill="rgba(0,38,100,0.1)"/>
+        <text x="160" y="114" text-anchor="middle" fill="white" font-size="9" font-weight="700" font-family="Inter">YOU</text>
+      </svg>
+      <div class="map-overlay">
+        <strong>Central Station</strong>
+        −33.8835, 151.2065
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-strip">
+      <div class="stat-cell">
+        <div class="stat-val">87<span style="font-size:12px">%</span></div>
+        <div class="stat-lbl">On time</div>
+        <div class="stat-delta up">↑ 3% today</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">14</div>
+        <div class="stat-lbl">Delayed</div>
+        <div class="stat-delta dn">↑ 5 this hr</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">3</div>
+        <div class="stat-lbl">Cancelled</div>
+        <div class="stat-delta up">↓ 2 vs yest.</div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alerts-section">
+      <div class="section-head">
+        Service Alerts
+        <span class="alert-count">3</span>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-severity sev-critical">Critical</div>
+        <div class="alert-headline">T4 Signal fault — Mascot Station</div>
+        <div class="alert-body-text">Trains delayed up to 8 min between Central and Airport. Buses replacing some services.</div>
+        <div class="alert-footer">
+          <div class="alert-lines">
+            <div class="alert-line-pip" style="background:var(--t4)"></div>
+            <div class="alert-line-pip" style="background:var(--t8)"></div>
+          </div>
+          <div class="alert-time-text">Est. clear 11:30</div>
+        </div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-severity sev-warn">Warning</div>
+        <div class="alert-headline">Bus 500X — Oxford St diversion</div>
+        <div class="alert-body-text">Rerouted via Crown St due to road closure near Taylor Square. Allow extra time.</div>
+        <div class="alert-footer">
+          <div class="alert-lines">
+            <div class="alert-line-pip" style="background:var(--bus)"></div>
+          </div>
+          <div class="alert-time-text">Until 14:00</div>
+        </div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-severity sev-info">Info</div>
+        <div class="alert-headline">Opal readers offline — Platform 7</div>
+        <div class="alert-body-text">Tap-on readers under maintenance. Use alternate entry gates.</div>
+        <div class="alert-footer">
+          <div class="alert-lines"></div>
+          <div class="alert-time-text">Resolving soon</div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  /* ── Clock ─────────────────────────────────────────────────────────────── */
+  const pad = n => String(n).padStart(2, '0');
+  function tick() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  /* ── UI tab interactions ─────────────────────────────────────────────── */
+  const MODE_BTN_MAP = { 'Train': 'train', 'Bus': 'bus', 'Ferry': 'ferry', 'LRT': 'lrt' };
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const label = b.textContent.replace(/\p{Emoji}/u, '').trim();
+      const wasOn = b.classList.contains('on');
+      document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('on'));
+      if (!wasOn) {
+        b.classList.add('on');
+        activeMode = MODE_BTN_MAP[label] || 'all';
+      } else {
+        activeMode = 'all'; // second click deselects → show all
+      }
+      applyModeFilter();
+    });
+  });
+  document.querySelectorAll('.f-chip').forEach(c =>
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.f-chip').forEach(x => x.classList.remove('on'));
+      c.classList.add('on');
+    })
+  );
+  document.querySelectorAll('.topbar-tab').forEach(t =>
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.topbar-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    })
+  );
+
+  /* ── Live departures ─────────────────────────────────────────────────── */
+  const LINE_COLORS = {
+    t1:'#F5A81C', t2:'#0098CD', t3:'#F77F00', t4:'#EB4486',
+    t5:'#C669A4', t8:'#00AF64', t9:'#D4292E',
+    train:'#002664', metro:'#009B77',
+    bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E',
+  };
+
+  let currentStopId   = '10101100';
+  let currentStopName = 'Central Station';
+
+  // ── Nearby stops ──────────────────────────────────────────────────────────
+  const MODE_TAG = {
+    train: { letter: 'T', color: '#002664' },
+    metro: { letter: 'M', color: '#009B77' },
+    lrt:   { letter: 'L', color: '#7E2A8E' },
+    bus:   { letter: 'B', color: '#00B5B8' },
+    ferry: { letter: 'F', color: '#005AA3' },
+  };
+
+  function renderStopList(stops) {
+    const scroll = document.getElementById('stopScroll');
+    if (!stops.length) {
+      scroll.innerHTML = '<div style="padding:20px 16px;color:#aaa;font-size:12px">No stops found nearby.</div>';
+      return;
+    }
+    scroll.innerHTML = stops.map((s, i) => {
+      const tag   = MODE_TAG[s.mode] || MODE_TAG.bus;
+      const km    = s.dist >= 1000 ? (s.dist/1000).toFixed(1)+'km' : s.dist+'m';
+      const lines = s.lines.slice(0,6).join(' · ') || '—';
+      return `<div class="stop-row${i===0?' active':''}" data-stop-id="${s.id}" data-stop-name="${escHtml(s.name)}">
+        <div class="stop-type-tag" style="background:${tag.color};color:#fff">${tag.letter}</div>
+        <div class="stop-details">
+          <div class="stop-title">${escHtml(s.name)}</div>
+          <div class="stop-lines">${escHtml(lines)}</div>
+        </div>
+        <div class="stop-km">${km}</div>
+      </div>`;
+    }).join('');
+
+    // Wire clicks
+    scroll.querySelectorAll('.stop-row').forEach(r => {
+      r.addEventListener('click', () => {
+        scroll.querySelectorAll('.stop-row').forEach(x => x.classList.remove('active'));
+        r.classList.add('active');
+        currentStopId   = r.dataset.stopId;
+        currentStopName = r.dataset.stopName;
+        document.querySelector('.board-stop-name').textContent = currentStopName;
+        loadDepartures();
+      });
+    });
+
+    // Auto-load departures for first stop
+    const first = stops[0];
+    currentStopId   = first.id;
+    currentStopName = first.name;
+    document.querySelector('.board-stop-name').textContent = first.name;
+    loadDepartures();
+  }
+
+  async function loadNearbyStops(lat, lon) {
+    const radius = 2000;
+    document.getElementById('nearbyLabel').textContent = 'Nearby — loading…';
+    try {
+      const res  = await fetch(`/api/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const km = (radius/1000).toFixed(1);
+      document.getElementById('nearbyLabel').textContent = `Nearby — ${km} km radius`;
+      renderStopList(data.stops || []);
+    } catch (e) {
+      document.getElementById('nearbyLabel').textContent = 'Nearby stops';
+      document.getElementById('stopScroll').innerHTML =
+        '<div style="padding:20px 16px;color:#aaa;font-size:12px">Could not load nearby stops.</div>';
+    }
+  }
+
+  // Load with Sydney CBD default on start
+  loadNearbyStops(-33.8688, 151.2093);
+
+  function countdownClass(mins, cancelled) {
+    if (cancelled) return 'now';
+    if (mins <= 2)  return 'now';
+    if (mins <= 8)  return 'soon';
+    return 'ok';
+  }
+
+  function occDots(occ) {
+    // occ: TfNSW string — MANY_SEATS | FEW_SEATS | STANDING_ONLY | null
+    const map = { MANY_SEATS: 1, FEW_SEATS: 2, STANDING_ONLY: 3 };
+    const level = map[occ] || 0;
+    const dotClass = level === 1 ? 'f-low' : level === 2 ? 'f-med' : level === 3 ? 'f-high' : '';
+    return [1,2,3,4,5].map(i =>
+      `<div class="occ-dot ${i <= level ? dotClass : ''}"></div>`
+    ).join('');
+  }
+
+  const MODE_META = {
+    train:  { label: 'Train',      icon: '🚆', color: 'var(--navy)', order: 1 },
+    metro:  { label: 'Metro',      icon: '🚇', color: '#009B77',     order: 2 },
+    lrt:    { label: 'Light Rail', icon: '🚊', color: 'var(--lrt)',  order: 3 },
+    bus:    { label: 'Bus',        icon: '🚌', color: 'var(--bus)',  order: 4 },
+    ferry:  { label: 'Ferry',      icon: '⛴',  color: 'var(--ferry)',order: 5 },
+  };
+
+  let allDepartures  = [];
+  let activeMode     = 'all';
+
+  function renderDepartures(departures) {
+    allDepartures = departures;
+    applyModeFilter();
+  }
+
+  function applyModeFilter() {
+    const filtered = activeMode === 'all'
+      ? allDepartures
+      : allDepartures.filter(d => d.mode === activeMode);
+    paintBoard(filtered);
+  }
+
+  function paintBoard(departures) {
+    const board = document.querySelector('.board-scroll');
+    if (!departures.length) {
+      board.innerHTML = '<div style="padding:32px 24px;color:#999;font-size:13px;">No departures found.</div>';
+      return;
+    }
+
+    // Group by mode, ordered
+    const groups = {};
+    for (const d of departures) {
+      const m = d.mode || 'bus';
+      if (!groups[m]) groups[m] = [];
+      groups[m].push(d);
+    }
+    const orderedModes = Object.keys(groups).sort(
+      (a, b) => (MODE_META[a]?.order ?? 9) - (MODE_META[b]?.order ?? 9)
+    );
+
+    let html = '';
+    for (const mode of orderedModes) {
+      const meta = MODE_META[mode] || { label: mode, icon: '🚌', color: '#555' };
+      html += `<div class="dir-group">
+        <div class="dir-heading mode-${mode}">
+          <span style="margin-right:6px">${meta.icon}</span>${meta.label}
+        </div>`;
+      for (const d of groups[mode]) {
+        const color   = LINE_COLORS[d.lineClass] || '#555';
+        const cdClass = countdownClass(d.minsAway, d.cancelled);
+        const cdText  = d.cancelled ? 'CANC' : d.minsAway <= 0 ? 'Now' : `${d.minsAway} min`;
+        const statusTag = d.cancelled
+          ? '<div class="status-tag cancelled">Cancelled</div>'
+          : d.delay > 0
+            ? `<div class="status-tag delayed">+${d.delay} min</div>`
+            : '<div class="status-tag ontime">On time</div>';
+        const via  = d.via  ? `<div class="dep-dest-via">${escHtml(d.via)}</div>` : '';
+        const plat = d.platform || '';
+
+        html += `<div class="dep-row">
+          <div class="dep-mode-icon">${meta.icon}</div>
+          <div><span class="line-badge" style="background:${color}">
+            <span class="line-dot"></span>${escHtml(d.line)}
+          </span></div>
+          <div class="dep-dest">
+            <div class="dep-dest-primary">${escHtml(d.destination)}</div>
+            ${via}
+          </div>
+          <div class="dep-time">${d.time}</div>
+          <div class="dep-countdown ${cdClass}">${cdText}</div>
+          <div class="dep-platform" style="font-size:11px;color:var(--mid)">${escHtml(plat)}</div>
+          <div class="dep-status">
+            ${statusTag}
+            <div class="occ-dots">${occDots(d.occupancy)}</div>
+          </div>
+        </div>`;
+      }
+      html += '</div>';
+    }
+    board.innerHTML = html;
+  }
+
+  async function loadDepartures() {
+    const refreshEl = document.querySelector('.refresh-time');
+    if (refreshEl) refreshEl.textContent = 'Refreshing…';
+    try {
+      const res  = await fetch(`/api/departures?stopId=${currentStopId}&limit=30`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderDepartures(data.departures || []);
+      const now = new Date();
+      if (refreshEl) refreshEl.textContent =
+        `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    } catch (e) {
+      console.error('departures fetch:', e);
+      if (refreshEl) refreshEl.textContent = 'Error refreshing';
+    }
+  }
+
+  // Load on start, then every 30 s
+  loadDepartures();
+  setInterval(loadDepartures, 30_000);
+
+  /* ── Stop search (left panel) ───────────────────────────────────────── */
+  const searchInput = document.querySelector('.search-field input');
+  let searchTimer;
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = searchInput.value.trim();
+    if (!q) return;
+    searchTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch(`/api/stop?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        console.log('Stop results:', data.locations);
+      } catch (e) { /* ignore */ }
+    }, 400);
+  });
+
+  /* ── Tab switching (Departures ↔ Trip Planner) ──────────────────────── */
+  const depView  = document.querySelector('.departures-view');
+  const tripView = document.getElementById('tripView');
+
+  document.querySelectorAll('.topbar-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.topbar-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const label = t.textContent.trim();
+      if (label === 'Trip Planner') {
+        depView.classList.add('hidden');
+        tripView.classList.add('active');
+        document.getElementById('fromInput').focus();
+      } else {
+        depView.classList.remove('hidden');
+        tripView.classList.remove('active');
+      }
+    });
+  });
+
+  /* ── Trip Planner ────────────────────────────────────────────────────── */
+  const LINE_COLORS_TRIP = {
+    t1:'#F5A81C', t2:'#0098CD', t3:'#F77F00', t4:'#EB4486',
+    t5:'#C669A4', t8:'#00AF64', t9:'#D4292E',
+    train:'#002664', metro:'#009B77',
+    bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E',
+  };
+
+  let fromStop = null; // { id, name, lat, lon, isGPS }
+  let toStop   = null; // { id, name }
+
+  // ── Autocomplete ────────────────────────────────────────────────────────
+  function makeAC(inputEl, listEl, onSelect) {
+    let timer;
+    inputEl.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = inputEl.value.trim();
+      if (q.length < 2) { listEl.style.display = 'none'; return; }
+      timer = setTimeout(async () => {
+        try {
+          const res  = await fetch(`/api/stop?q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          renderAC(listEl, data.locations || [], onSelect);
+        } catch (e) { listEl.style.display = 'none'; }
+      }, 300);
+    });
+    inputEl.addEventListener('blur', () => {
+      setTimeout(() => { listEl.style.display = 'none'; }, 150);
+    });
+  }
+
+  function renderAC(listEl, locs, onSelect) {
+    if (!locs.length) { listEl.style.display = 'none'; return; }
+    listEl.innerHTML = locs.map(l => {
+      const tag = l.type === 'stop' ? 'T' : '📍';
+      return `<div class="ac-item" data-id="${l.id}" data-name="${escHtml(l.name)}"
+                   data-lat="${l.lat||''}" data-lon="${l.lon||''}">
+        <span class="ac-mode-tag">${tag}</span>
+        ${escHtml(l.name)}
+      </div>`;
+    }).join('');
+    listEl.querySelectorAll('.ac-item').forEach(el => {
+      el.addEventListener('mousedown', () => {
+        onSelect({ id: el.dataset.id, name: el.dataset.name,
+                   lat: el.dataset.lat, lon: el.dataset.lon });
+        listEl.style.display = 'none';
+      });
+    });
+    listEl.style.display = 'block';
+  }
+
+  makeAC(
+    document.getElementById('fromInput'),
+    document.getElementById('fromAC'),
+    stop => { fromStop = stop; document.getElementById('fromInput').value = stop.name; }
+  );
+  makeAC(
+    document.getElementById('toInput'),
+    document.getElementById('toAC'),
+    stop => { toStop = stop; document.getElementById('toInput').value = stop.name; }
+  );
+
+  // ── GPS ─────────────────────────────────────────────────────────────────
+  document.getElementById('gpsBtn').addEventListener('click', () => {
+    const btn = document.getElementById('gpsBtn');
+    const GPS_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" opacity=".3"/></svg>';
+    if (!navigator.geolocation) {
+      showFieldError('fromWrap', 'GPS not supported by this browser');
+      return;
+    }
+    btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:1.5px"></div>';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        fromStop = { id: null, name: 'Current Location',
+          lat: pos.coords.latitude, lon: pos.coords.longitude, isGPS: true };
+        document.getElementById('fromInput').value = 'Current Location';
+        btn.classList.add('active');
+        btn.innerHTML = GPS_SVG;
+      },
+      err => {
+        btn.innerHTML = GPS_SVG;
+        const msg = err.code === 1 ? 'Location access denied — please type a stop instead'
+                  : err.code === 3 ? 'Location timed out — please type a stop instead'
+                  : 'Could not get location — please type a stop instead';
+        showFieldError('fromWrap', msg);
+      },
+      { timeout: 10000, maximumAge: 60000 }
+    );
+  });
+
+  // ── Swap ────────────────────────────────────────────────────────────────
+  document.getElementById('swapBtn').addEventListener('click', () => {
+    const fi = document.getElementById('fromInput');
+    const ti = document.getElementById('toInput');
+    [fromStop, toStop] = [toStop, fromStop];
+    [fi.value, ti.value] = [ti.value, fi.value];
+    if (fromStop?.isGPS) {
+      document.getElementById('gpsBtn').classList.add('active');
+    } else {
+      document.getElementById('gpsBtn').classList.remove('active');
+    }
+  });
+
+  // ── Plan Trip ───────────────────────────────────────────────────────────
+  document.getElementById('planBtn').addEventListener('click', planTrip);
+
+  async function planTrip() {
+    if (!fromStop) return shakeField('fromWrap');
+    if (!toStop)   return shakeField('toWrap');
+
+    const btn     = document.getElementById('planBtn');
+    const results = document.getElementById('tripResults');
+    btn.disabled  = true;
+    btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:1.5px;border-top-color:#fff"></div> Planning…';
+    results.innerHTML = '<div class="trip-loading"><div class="spinner"></div>Finding the best routes…</div>';
+
+    try {
+      const params = new URLSearchParams({ toId: toStop.id });
+      if (fromStop.isGPS) {
+        params.set('fromLat', fromStop.lat);
+        params.set('fromLon', fromStop.lon);
+      } else {
+        params.set('fromId', fromStop.id);
+      }
+
+      const res  = await fetch(`/api/trip?${params}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderJourneys(data.journeys || [], results);
+    } catch (e) {
+      results.innerHTML = `<div class="trip-empty"><div class="trip-empty-icon">⚠️</div>${e.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M13 6l6 6-6 6"/></svg> Plan Trip';
+    }
+  }
+
+  function renderJourneys(journeys, container) {
+    if (!journeys.length) {
+      container.innerHTML = '<div class="trip-empty"><div class="trip-empty-icon">🚫</div>No trips found for this route.</div>';
+      return;
+    }
+
+    let html = '';
+    journeys.forEach((j, i) => {
+      const best = i === 0;
+      const chg  = j.interchanges === 0 ? 'Direct' : `${j.interchanges} change${j.interchanges > 1 ? 's' : ''}`;
+
+      // Build pill strip — show all legs; walks show duration if ≥ 1 min
+      const pills = j.legs.map(leg => {
+        if (leg.walk) {
+          const mins = Math.round(leg.durationSecs / 60);
+          const dist = leg.distanceM ? ` · ${leg.distanceM}m` : '';
+          return `<span class="leg-pill walk">🚶 ${mins >= 1 ? mins + 'min' + dist : 'walk'}</span><span class="leg-connector">›</span>`;
+        }
+        const meta  = MODE_META[leg.mode] || { icon: '🚌' };
+        const col   = LINE_COLORS_TRIP[leg.lineClass] || '#555';
+        const label = leg.line ? `${meta.icon} ${escHtml(leg.line)}` : meta.icon;
+        return `<span class="leg-pill" style="background:${col}" title="${escHtml(leg.from)} → ${escHtml(leg.to)}">${label}</span><span class="leg-connector">›</span>`;
+      }).join('').replace(/<span class="leg-connector">›<\/span>$/, '');
+
+      // Leg detail — transit legs only
+      const detail = j.legs.filter(l => !l.walk && l.line).map(l => {
+        const meta = MODE_META[l.mode] || { icon: '🚌' };
+        return `${meta.icon} <span style="font-weight:600">${escHtml(l.line)}</span> ${escHtml(l.from)} → ${escHtml(l.to)} <span style="color:#aaa">${l.depTime}–${l.arrTime}</span>`;
+      }).join('<br>');
+
+      const dur = j.durationMin > 0 ? `${j.durationMin} min` : '';
+
+      html += `<div class="journey-card${best ? ' best' : ''}">
+        <div class="journey-head">
+          <span class="journey-times">${j.depTime}</span>
+          <span class="journey-arrow">→</span>
+          <span class="journey-times">${j.arrTime}</span>
+          ${dur ? `<span class="journey-dur">${dur}</span>` : ''}
+          <span class="journey-changes">${chg}</span>
+          ${best ? '<span class="best-tag">Fastest</span>' : ''}
+        </div>
+        <div class="leg-strip">${pills}</div>
+        ${detail ? `<div class="leg-detail" style="margin-top:8px;line-height:1.8">${detail}</div>` : ''}
+      </div>`;
+    });
+
+    container.innerHTML = `
+      <div class="trip-results-label">
+        ${escHtml(fromStop.name)} → ${escHtml(toStop.name)}
+      </div>${html}`;
+  }
+
+  function shakeField(id) { showFieldError(id, ''); }
+
+  function showFieldError(wrapperId, msg) {
+    const wrap = document.getElementById(wrapperId);
+    wrap.style.borderColor = '#DC2626';
+    // remove any existing error tip
+    wrap.parentElement.querySelectorAll('.field-err').forEach(e => e.remove());
+    if (msg) {
+      const tip = document.createElement('div');
+      tip.className  = 'field-err';
+      tip.textContent = msg;
+      tip.style.cssText = 'font-size:11px;color:#DC2626;margin-top:4px;padding-left:2px;';
+      wrap.parentElement.appendChild(tip);
+    }
+    setTimeout(() => {
+      wrap.style.borderColor = '';
+      wrap.parentElement.querySelectorAll('.field-err').forEach(e => e.remove());
+    }, 4000);
+  }
+  function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

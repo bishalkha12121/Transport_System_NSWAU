@@ -55,7 +55,11 @@ app.get('/api/departures', async (req, res) => {
   });
   try {
     const r = await fetch(`${TFNSW}/departure_mon?${p}`, { headers: hdrs() });
-    if (!r.ok) return res.status(r.status).json({ error: `TfNSW ${r.status}` });
+    if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      console.error(`departures TfNSW ${r.status}:`, body.slice(0, 300));
+      return res.status(r.status).json({ error: `TfNSW ${r.status}` });
+    }
     const raw    = await r.json();
     const events = (raw.stopEvents || []).slice(0, limit);
     const now    = Date.now();
@@ -75,8 +79,8 @@ app.get('/api/departures', async (req, res) => {
       const shortLine = tr.disassembledName || extractLineCode(prod.shortName || tr.number || '');
       const prodClass = prod.class;
       return {
-        line:        shortLine || rawLine,
-        lineClass:   lineClass(shortLine || rawLine),
+        line:        shortLine || '',
+        lineClass:   lineClass(shortLine || ''),
         mode:        modeFromClass(prodClass),
         destination: dest.name || '',
         via:         tr.description || '',
@@ -187,8 +191,8 @@ app.get('/api/trip', async (req, res) => {
         const isWalk  = !!leg.isFootpathLeg;
         return {
           mode:      isWalk ? 'walk' : modeFromClass(prod.class),
-          line:      code || rawLine,
-          lineClass: isWalk ? 'walk' : lineClass(code || rawLine),
+          line:      code || '',
+          lineClass: isWalk ? 'walk' : lineClass(code || ''),
           from:      leg.origin?.name || '',
           to:        leg.destination?.name || '',
           depTime:   toHHMM(leg.origin?.departureTimeEstimated || leg.origin?.departureTimePlanned),

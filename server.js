@@ -14,6 +14,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const hdrs = () => ({ Authorization: `apikey ${API_KEY}`, Accept: 'application/json' });
 
+/* ── /api/health  ────────────────────────────────────────────────────────── */
+app.get('/api/health', async (req, res) => {
+  const keySet = !!API_KEY;
+  const keyPreview = API_KEY ? `${API_KEY.slice(0, 12)}…` : 'NOT SET';
+  let tfnswStatus = null, tfnswBody = '';
+  try {
+    const r = await fetch(
+      `${TFNSW}/departure_mon?outputFormat=rapidJSON&type_dm=stop&name_dm=10101100&TfNSWDM=true&version=10.2.1.42`,
+      { headers: hdrs() }
+    );
+    tfnswStatus = r.status;
+    tfnswBody   = (await r.text()).slice(0, 500);
+  } catch (e) {
+    tfnswBody = e.message;
+  }
+  res.json({ keySet, keyPreview, tfnswStatus, tfnswBody });
+});
+
 /* ── /api/stop?q=<name>  ─────────────────────────────────────────────────── */
 app.get('/api/stop', async (req, res) => {
   const q = req.query.q || 'Central Station';

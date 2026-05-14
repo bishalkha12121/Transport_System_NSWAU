@@ -1,8 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
-const fetch   = require('node-fetch');
 const path    = require('path');
+
+// Use native fetch (Node 18+); fall back to node-fetch for older local envs
+const fetch = globalThis.fetch ?? require('node-fetch');
 
 const app      = express();
 const PORT     = process.env.PORT || 3400;

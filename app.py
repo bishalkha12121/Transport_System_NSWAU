@@ -12,8 +12,10 @@ from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
-API_KEY = os.environ.get("TFNSW_API_KEY", "")
-TFNSW   = "https://api.transport.nsw.gov.au/v1/tp"
+API_KEY       = os.environ.get("TFNSW_API_KEY", "")
+TFNSW         = "https://api.transport.nsw.gov.au/v1/tp"
+SUPABASE_URL  = os.environ.get("SUPABASE_URL", "")
+SUPABASE_ANON = os.environ.get("SUPABASE_ANON_KEY", "")
 
 app = FastAPI()
 
@@ -55,6 +57,12 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
          math.cos(lat2 * math.pi / 180) *
          math.sin(dlon / 2) ** 2)
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+# ── /api/config ───────────────────────────────────────────────────────────────
+@app.get("/api/config")
+async def config():
+    return {"supabaseUrl": SUPABASE_URL, "supabaseAnonKey": SUPABASE_ANON}
 
 
 # ── /api/health ───────────────────────────────────────────────────────────────
@@ -199,6 +207,8 @@ async def nearby(lat: float = -33.8688, lon: float = 151.2093, radius: int = 200
                     "dist":  round(haversine(lat, lon, coord[0], coord[1])),
                     "mode":  mode_from_class((e.get("transportation") or {}).get("product", {}).get("class")),
                     "lines": [],
+                    "lat":   coord[0],
+                    "lon":   coord[1],
                 }
             tr   = e.get("transportation") or {}
             code = tr.get("disassembledName") or extract_line_code(tr.get("number") or "")

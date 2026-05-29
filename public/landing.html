@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TfNSW Live — Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #002664;
+      --white: #ffffff;
+      --off:   #F7F7F5;
+      --ink:   #111111;
+      --mid:   #555555;
+      --line:  #E0E0E0;
+      --red:   #DC2626;
+      --green: #16A34A;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      height: 56px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .wordmark {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--white); font-size: 13px; font-weight: 600;
+    }
+    .nsw-logo {
+      background: var(--white); color: var(--navy);
+      font-weight: 800; font-size: 11px;
+      padding: 3px 6px; border-radius: 3px; letter-spacing: 0.05em;
+    }
+    .wordmark-sep { opacity: 0.3; margin: 0 4px; }
+
+    /* ── Hero ── */
+    .hero {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 80px;
+      padding: 60px 40px;
+    }
+
+    .hero-left { flex: 1; max-width: 480px; }
+    .hero-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: rgba(255,255,255,0.5);
+      margin-bottom: 20px;
+    }
+    .hero-title {
+      font-size: 52px; font-weight: 800; line-height: 1.05;
+      letter-spacing: -0.03em; color: var(--white);
+      margin-bottom: 20px;
+    }
+    .hero-title span { color: #F5A81C; }
+    .hero-sub {
+      font-size: 16px; color: rgba(255,255,255,0.6);
+      line-height: 1.6; margin-bottom: 36px;
+    }
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 12px;
+      color: rgba(255,255,255,0.75); font-size: 14px;
+    }
+    .feature-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #F5A81C; flex-shrink: 0;
+    }
+
+    /* ── Auth card ── */
+    .auth-card {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 36px;
+      width: 380px;
+      flex-shrink: 0;
+    }
+    .auth-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      flex: 1; text-align: center;
+      padding: 10px 0;
+      font-size: 13px; font-weight: 600;
+      color: var(--mid); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+    }
+    .auth-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+    .auth-form { display: none; flex-direction: column; gap: 16px; }
+    .auth-form.active { display: flex; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mid); }
+    .form-input {
+      border: 1.5px solid var(--line); border-radius: 4px;
+      padding: 10px 12px; font-family: inherit; font-size: 13px;
+      color: var(--ink); outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--navy); }
+    .form-input.error { border-color: var(--red); }
+
+    .submit-btn {
+      background: var(--navy); color: var(--white);
+      border: none; border-radius: 4px; padding: 12px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .submit-btn:hover { background: #003a8c; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .auth-msg {
+      font-size: 12px; padding: 10px 12px;
+      border-radius: 4px; display: none;
+    }
+    .auth-msg.error   { background: #FEF2F2; color: var(--red);   border: 1px solid #FECACA; display: block; }
+    .auth-msg.success { background: #F0FDF4; color: var(--green); border: 1px solid #BBF7D0; display: block; }
+
+    .form-footer {
+      text-align: center; font-size: 11px; color: var(--mid);
+    }
+
+    .spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      .hero { flex-direction: column; align-items: center; gap: 40px; }
+      .hero-left { max-width: 100%; text-align: center; }
+      .hero-title { font-size: 36px; }
+      .feature-list { align-items: center; }
+      .auth-card { width: 100%; max-width: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wordmark">
+    <span class="nsw-logo">NSW</span>
+    <span class="wordmark-sep">|</span>
+    Transport for NSW
+    <span class="wordmark-sep">—</span>
+    Live Departures
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">NSW Public Transport</div>
+    <h1 class="hero-title">Sydney<br>transit,<br><span>live.</span></h1>
+    <p class="hero-sub">Real-time departures, trip planning, and nearby stops — all in one place. Save your favourite routes and stops for instant access.</p>
+    <div class="feature-list">
+      <div class="feature-item"><div class="feature-dot"></div>Live departure boards for every stop</div>
+      <div class="feature-item"><div class="feature-dot"></div>Trip planner with real-time journey data</div>
+      <div class="feature-item"><div class="feature-dot"></div>Nearby stops on an interactive map</div>
+      <div class="feature-item"><div class="feature-dot"></div>Save favourite stops and routes</div>
+    </div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="signin">Sign in</div>
+      <div class="auth-tab" data-tab="signup">Create account</div>
+    </div>
+
+    <div id="authMsg" class="auth-msg"></div>
+
+    <!-- Sign in -->
+    <form class="auth-form active" id="signinForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="signinEmail" placeholder="you@example.com" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="signinPassword" placeholder="••••••••" required/>
+      </div>
+      <button class="submit-btn" type="submit" id="signinBtn">Sign in</button>
+      <div class="form-footer">Don't have an account? <a href="#" data-tab="signup" style="color:var(--navy);font-weight:600">Create one</a></div>
+    </form>
+
+    <!-- Sign up -->
+    <form class="auth-form" id="signupForm">
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input class="form-input" type="text" id="signupName" placeholder="Jane Smith" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="signupEmail" placeholder="you@example.com" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="signupPassword" placeholder="Min. 6 characters" required minlength="6"/>
+      </div>
+      <button class="submit-btn" type="submit" id="signupBtn">Create account</button>
+      <div class="form-footer">Already have an account? <a href="#" data-tab="signin" style="color:var(--navy);font-weight:600">Sign in</a></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let supabase = null;
+
+  async function init() {
+    const cfg = await fetch('/api/config').then(r => r.json());
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    supabase = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+    // Already logged in → go straight to app
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) window.location.href = '/index.html';
+  }
+  init();
+
+  // Tab switching
+  document.querySelectorAll('.auth-tab, [data-tab]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const tab = el.dataset.tab;
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.toggle('active', f.id === tab + 'Form'));
+      clearMsg();
+    });
+  });
+
+  function showMsg(msg, type) {
+    const el = document.getElementById('authMsg');
+    el.textContent = msg;
+    el.className = 'auth-msg ' + type;
+  }
+  function clearMsg() {
+    document.getElementById('authMsg').className = 'auth-msg';
+  }
+  function setLoading(btn, loading) {
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? '<div class="spinner"></div>'
+      : btn.id === 'signinBtn' ? 'Sign in' : 'Create account';
+  }
+
+  // Sign in
+  document.getElementById('signinForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn   = document.getElementById('signinBtn');
+    const email = document.getElementById('signinEmail').value.trim();
+    const pass  = document.getElementById('signinPassword').value;
+    clearMsg();
+    setLoading(btn, true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+      window.location.href = '/index.html';
+    } catch (err) {
+      showMsg(err.message || 'Sign in failed', 'error');
+      setLoading(btn, false);
+    }
+  });
+
+  // Sign up
+  document.getElementById('signupForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn   = document.getElementById('signupBtn');
+    const name  = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const pass  = document.getElementById('signupPassword').value;
+    clearMsg();
+    setLoading(btn, true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email, password: pass,
+        options: { data: { full_name: name } }
+      });
+      if (error) throw error;
+      showMsg('Account created! Check your email to confirm, then sign in.', 'success');
+      setLoading(btn, false);
+    } catch (err) {
+      showMsg(err.message || 'Sign up failed', 'error');
+      setLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TfNSW — Live Departures</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -101,6 +103,66 @@
       align-items: center;
       gap: 16px;
     }
+    .user-menu {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.1); border-radius: 6px;
+      padding: 5px 12px; cursor: pointer; position: relative;
+    }
+    .user-menu:hover { background: rgba(255,255,255,0.15); }
+    .user-name { font-size: 12px; color: rgba(255,255,255,0.85); font-weight: 500; }
+    .user-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: #F5A81C; color: var(--navy);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800;
+    }
+    .user-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--white); border: 1.5px solid var(--line);
+      border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      min-width: 160px; z-index: 500; display: none;
+    }
+    .user-dropdown.open { display: block; }
+    .user-dropdown-item {
+      padding: 10px 14px; font-size: 13px; color: var(--ink);
+      cursor: pointer; border-bottom: 1px solid var(--line);
+    }
+    .user-dropdown-item:last-child { border-bottom: none; }
+    .user-dropdown-item:hover { background: var(--off); }
+    .user-dropdown-item.danger { color: #DC2626; }
+
+    /* Favourites */
+    .fav-section { border-bottom: 1px solid var(--line); }
+    .fav-header {
+      padding: 10px 16px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid);
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+    }
+    .fav-header:hover { background: var(--off); }
+    .fav-list { }
+    .fav-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px; border-bottom: 1px solid var(--line);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .fav-row:hover { background: var(--off); }
+    .fav-icon { font-size: 14px; flex-shrink: 0; }
+    .fav-label { flex: 1; font-size: 12px; font-weight: 500; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fav-sub { font-size: 10px; color: var(--mid); }
+    .fav-del {
+      font-size: 14px; color: #ccc; cursor: pointer; flex-shrink: 0;
+      padding: 2px 4px; border-radius: 3px;
+    }
+    .fav-del:hover { color: #DC2626; background: #FEF2F2; }
+    .star-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; padding: 2px 4px; line-height: 1;
+      opacity: 0.4; transition: opacity 0.15s, transform 0.15s;
+    }
+    .star-btn:hover { opacity: 1; }
+    .star-btn.starred { opacity: 1; }
     .gps-indicator {
       display: flex;
       align-items: center;
@@ -402,25 +464,12 @@
     .map-area {
       position: relative;
       height: 220px;
-      background: #E8EEF4;
       flex-shrink: 0;
       overflow: hidden;
     }
-    .map-svg {
-      position: absolute; inset: 0;
+    #map {
       width: 100%; height: 100%;
     }
-    .map-overlay {
-      position: absolute;
-      bottom: 10px; left: 10px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid var(--line);
-      padding: 6px 10px;
-      font-size: 11px;
-      border-radius: 3px;
-      color: var(--mid);
-    }
-    .map-overlay strong { color: var(--ink); display: block; margin-bottom: 2px; }
 
     /* Alerts */
     .alerts-section { flex: 1; overflow-y: auto; }
@@ -649,19 +698,25 @@
   </div>
 
   <div class="topbar-center">
-    <div class="topbar-tab active">Overview</div>
-    <div class="topbar-tab">Trip Planner</div>
-    <div class="topbar-tab">Network</div>
-    <div class="topbar-tab">Alerts</div>
-    <div class="topbar-tab">Opal</div>
+    <div class="topbar-tab active" data-view="overview">Overview</div>
+    <div class="topbar-tab" data-view="trip">Trip Planner</div>
+    <div class="topbar-tab" data-view="alerts">Alerts</div>
   </div>
 
   <div class="topbar-right">
     <div class="gps-indicator">
       <div class="gps-dot"></div>
-      <span>Sydney CBD  −33.8688, 151.2093</span>
+      <span id="gpsIndicatorText">Sydney CBD  −33.8688, 151.2093</span>
     </div>
     <div class="clock" id="clock">10:42:00</div>
+    <div class="user-menu" id="userMenu">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <span class="user-name" id="userName">Loading…</span>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="user-dropdown-item" id="dropdownEmail" style="color:var(--mid);font-size:11px;cursor:default"></div>
+        <div class="user-dropdown-item danger" id="logoutBtn">Sign out</div>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -685,6 +740,15 @@
       <div class="mode-btn"><span class="mode-btn-icon">🚊</span>LRT</div>
     </div>
 
+    <!-- Favourites -->
+    <div class="fav-section" id="favSection">
+      <div class="fav-header" id="favToggle">
+        ★ Favourites
+        <span id="favChevron">▾</span>
+      </div>
+      <div class="fav-list" id="favList"></div>
+    </div>
+
     <div class="panel-label" id="nearbyLabel">Nearby — loading…</div>
     <div class="stop-scroll" id="stopScroll">
       <div style="padding:20px 16px;color:#aaa;font-size:12px">Loading nearby stops…</div>
@@ -699,11 +763,11 @@
     <div class="board-header">
       <div class="board-stop-name">Central Station</div>
       <div class="board-meta">
-        <span class="board-meta-item">Platforms 1–25</span>
+        <span class="board-meta-item" id="boardModes">All modes</span>
         <span class="board-meta-dot">·</span>
-        <span class="board-meta-item">All lines</span>
+        <span class="board-meta-item" id="boardCount">—</span>
         <span class="board-meta-dot">·</span>
-        <span class="refresh-time">Updated 10:42:18</span>
+        <span class="refresh-time" id="refreshTime">Loading…</span>
       </div>
     </div>
 
@@ -780,113 +844,269 @@
 
     <!-- Map -->
     <div class="map-area">
-      <svg class="map-svg" viewBox="0 0 320 220" preserveAspectRatio="xMidYMid slice">
-        <rect width="320" height="220" fill="#E8EEF4"/>
-        <!-- grid -->
-        <g stroke="#D0D9E4" stroke-width="0.5">
-          <line x1="0" y1="44" x2="320" y2="44"/>
-          <line x1="0" y1="88" x2="320" y2="88"/>
-          <line x1="0" y1="132" x2="320" y2="132"/>
-          <line x1="0" y1="176" x2="320" y2="176"/>
-          <line x1="64" y1="0" x2="64" y2="220"/>
-          <line x1="128" y1="0" x2="128" y2="220"/>
-          <line x1="192" y1="0" x2="192" y2="220"/>
-          <line x1="256" y1="0" x2="256" y2="220"/>
-        </g>
-        <!-- roads -->
-        <path d="M0 110 Q80 105 160 110 Q240 115 320 108" stroke="#C8D2DC" stroke-width="10" fill="none"/>
-        <path d="M160 0 L160 220" stroke="#C8D2DC" stroke-width="10" fill="none"/>
-        <path d="M0 60 Q100 55 200 65 Q280 72 320 58" stroke="#D4DCE4" stroke-width="6" fill="none"/>
-        <path d="M0 168 Q110 158 210 170 Q285 178 320 165" stroke="#D4DCE4" stroke-width="6" fill="none"/>
-        <path d="M65 0 L72 220" stroke="#D8E0E8" stroke-width="4" fill="none"/>
-        <path d="M255 0 L248 220" stroke="#D8E0E8" stroke-width="4" fill="none"/>
-        <!-- train line -->
-        <path d="M0 90 Q80 88 160 95 Q240 102 320 98" stroke="#002664" stroke-width="3" fill="none" stroke-dasharray="8,3"/>
-        <!-- stops -->
-        <circle cx="160" cy="110" r="9" fill="#002664" stroke="white" stroke-width="2"/>
-        <circle cx="72" cy="100" r="6" fill="#F5A81C" stroke="white" stroke-width="2"/>
-        <circle cx="248" cy="104" r="6" fill="#0098CD" stroke="white" stroke-width="2"/>
-        <circle cx="160" cy="62" r="5" fill="#00B5B8" stroke="white" stroke-width="2"/>
-        <circle cx="128" cy="168" r="5" fill="#EB4486" stroke="white" stroke-width="2"/>
-        <!-- user dot -->
-        <circle cx="160" cy="110" r="18" fill="rgba(0,38,100,0.1)"/>
-        <text x="160" y="114" text-anchor="middle" fill="white" font-size="9" font-weight="700" font-family="Inter">YOU</text>
-      </svg>
-      <div class="map-overlay">
-        <strong>Central Station</strong>
-        −33.8835, 151.2065
-      </div>
+      <div id="map"></div>
     </div>
 
     <!-- Stats -->
     <div class="stats-strip">
       <div class="stat-cell">
-        <div class="stat-val">87<span style="font-size:12px">%</span></div>
+        <div class="stat-val" id="statOnTime">—</div>
         <div class="stat-lbl">On time</div>
-        <div class="stat-delta up">↑ 3% today</div>
+        <div class="stat-delta" id="statOnTimeSub"></div>
       </div>
       <div class="stat-cell">
-        <div class="stat-val">14</div>
+        <div class="stat-val" id="statDelayed">—</div>
         <div class="stat-lbl">Delayed</div>
-        <div class="stat-delta dn">↑ 5 this hr</div>
+        <div class="stat-delta" id="statDelayedSub"></div>
       </div>
       <div class="stat-cell">
-        <div class="stat-val">3</div>
+        <div class="stat-val" id="statCancelled">—</div>
         <div class="stat-lbl">Cancelled</div>
-        <div class="stat-delta up">↓ 2 vs yest.</div>
+        <div class="stat-delta" id="statCancelledSub"></div>
       </div>
     </div>
 
     <!-- Alerts -->
-    <div class="alerts-section">
+    <div class="alerts-section" id="alertsPanel">
       <div class="section-head">
         Service Alerts
-        <span class="alert-count">3</span>
+        <span class="alert-count" id="alertCount">0</span>
       </div>
-
-      <div class="alert-card">
-        <div class="alert-severity sev-critical">Critical</div>
-        <div class="alert-headline">T4 Signal fault — Mascot Station</div>
-        <div class="alert-body-text">Trains delayed up to 8 min between Central and Airport. Buses replacing some services.</div>
-        <div class="alert-footer">
-          <div class="alert-lines">
-            <div class="alert-line-pip" style="background:var(--t4)"></div>
-            <div class="alert-line-pip" style="background:var(--t8)"></div>
-          </div>
-          <div class="alert-time-text">Est. clear 11:30</div>
-        </div>
+      <div id="alertsContainer">
+        <div style="padding:20px 16px;color:#aaa;font-size:12px">Loading alerts…</div>
       </div>
-
-      <div class="alert-card">
-        <div class="alert-severity sev-warn">Warning</div>
-        <div class="alert-headline">Bus 500X — Oxford St diversion</div>
-        <div class="alert-body-text">Rerouted via Crown St due to road closure near Taylor Square. Allow extra time.</div>
-        <div class="alert-footer">
-          <div class="alert-lines">
-            <div class="alert-line-pip" style="background:var(--bus)"></div>
-          </div>
-          <div class="alert-time-text">Until 14:00</div>
-        </div>
-      </div>
-
-      <div class="alert-card">
-        <div class="alert-severity sev-info">Info</div>
-        <div class="alert-headline">Opal readers offline — Platform 7</div>
-        <div class="alert-body-text">Tap-on readers under maintenance. Use alternate entry gates.</div>
-        <div class="alert-footer">
-          <div class="alert-lines"></div>
-          <div class="alert-time-text">Resolving soon</div>
-        </div>
-      </div>
-
     </div>
   </aside>
 
 </div>
 
-<script>
-  /* ── Clock ─────────────────────────────────────────────────────────────── */
-  const pad = n => String(n).padStart(2, '0');
+<script type="module">
+'use strict';
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+const pad = n => String(n).padStart(2, '0');
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── Constants ───────────────────────────────────────────────────────────── */
+const LINE_COLORS = {
+  t1:'#F5A81C', t2:'#0098CD', t3:'#F77F00', t4:'#EB4486',
+  t5:'#C669A4', t8:'#00AF64', t9:'#D4292E',
+  train:'#002664', metro:'#009B77',
+  bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E',
+};
+const MODE_META = {
+  train:  { label:'Train',      icon:'🚆', order:1 },
+  metro:  { label:'Metro',      icon:'🚇', order:2 },
+  lrt:    { label:'Light Rail', icon:'🚊', order:3 },
+  bus:    { label:'Bus',        icon:'🚌', order:4 },
+  ferry:  { label:'Ferry',      icon:'⛴',  order:5 },
+};
+const MODE_TAG = {
+  train: { letter:'T', color:'#002664' },
+  metro: { letter:'M', color:'#009B77' },
+  lrt:   { letter:'L', color:'#7E2A8E' },
+  bus:   { letter:'B', color:'#00B5B8' },
+  ferry: { letter:'F', color:'#005AA3' },
+};
+
+/* ── State ───────────────────────────────────────────────────────────────── */
+let currentStopId   = '10101100';
+let currentStopName = 'Central Station';
+let allDepartures   = [];
+let activeMode      = 'all';
+let activeLineFilter= 'all';
+let fromStop        = null;
+let toStop          = null;
+let stopMarkers     = [];
+let nearbyStops     = [];   // cache for restoring after search
+let departureTimer  = null;
+
+/* ── Supabase init & auth ────────────────────────────────────────────────── */
+const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+const cfg = await fetch('/api/config').then(r => r.json());
+const sb  = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+// Auth guard — redirect to landing if not logged in
+const { data: { session } } = await sb.auth.getSession();
+if (!session) { window.location.href = '/landing.html'; }
+
+// User menu
+const user     = session.user;
+const initials = (user.user_metadata?.full_name || user.email || '?')
+  .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+document.getElementById('userAvatar').textContent  = initials;
+document.getElementById('userName').textContent    = user.user_metadata?.full_name || user.email.split('@')[0];
+document.getElementById('dropdownEmail').textContent = user.email;
+
+document.getElementById('userMenu').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('userDropdown').classList.toggle('open');
+});
+document.addEventListener('click', () => document.getElementById('userDropdown').classList.remove('open'));
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  window.location.href = '/landing.html';
+});
+
+/* ── Favourites ──────────────────────────────────────────────────────────── */
+let favStops  = [];  // [{id, stop_id, stop_name, stop_mode}]
+let favRoutes = [];  // [{id, label, from_stop_id, from_stop_name, to_stop_id, to_stop_name}]
+let favOpen   = true;
+
+async function loadFavourites() {
+  const [{ data: stops }, { data: routes }] = await Promise.all([
+    sb.from('favourite_stops').select('*').order('created_at'),
+    sb.from('favourite_routes').select('*').order('created_at'),
+  ]);
+  favStops  = stops  || [];
+  favRoutes = routes || [];
+  renderFavourites();
+}
+
+function renderFavourites() {
+  const list = document.getElementById('favList');
+  const all  = [...favStops, ...favRoutes];
+  if (!all.length) {
+    list.innerHTML = '<div style="padding:10px 16px;font-size:11px;color:#aaa">No favourites yet — star a stop or route.</div>';
+    return;
+  }
+  list.innerHTML = [
+    ...favStops.map(s => `
+      <div class="fav-row" data-stop-id="${escHtml(s.stop_id)}" data-stop-name="${escHtml(s.stop_name)}">
+        <span class="fav-icon">${stopModeIcon(s.stop_mode)}</span>
+        <div style="flex:1;min-width:0">
+          <div class="fav-label">${escHtml(s.stop_name)}</div>
+          <div class="fav-sub">Stop</div>
+        </div>
+        <span class="fav-del" data-fav-stop-id="${escHtml(s.id)}" title="Remove">✕</span>
+      </div>`),
+    ...favRoutes.map(r => `
+      <div class="fav-row" data-from-id="${escHtml(r.from_stop_id)}" data-from-name="${escHtml(r.from_stop_name)}"
+           data-to-id="${escHtml(r.to_stop_id)}" data-to-name="${escHtml(r.to_stop_name)}">
+        <span class="fav-icon">🗺️</span>
+        <div style="flex:1;min-width:0">
+          <div class="fav-label">${escHtml(r.label)}</div>
+          <div class="fav-sub">${escHtml(r.from_stop_name)} → ${escHtml(r.to_stop_name)}</div>
+        </div>
+        <span class="fav-del" data-fav-route-id="${escHtml(r.id)}" title="Remove">✕</span>
+      </div>`),
+  ].join('');
+
+  // Click stop row → load departures
+  list.querySelectorAll('.fav-row[data-stop-id]').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.fav-del')) return;
+      currentStopId   = row.dataset.stopId;
+      currentStopName = row.dataset.stopName;
+      document.querySelector('.board-stop-name').textContent = currentStopName;
+      clearInterval(departureTimer);
+      loadDepartures();
+      departureTimer = setInterval(loadDepartures, 30_000);
+    });
+  });
+
+  // Click route row → open trip planner pre-filled
+  list.querySelectorAll('.fav-row[data-from-id]').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.fav-del')) return;
+      fromStop = { id: row.dataset.fromId, name: row.dataset.fromName };
+      toStop   = { id: row.dataset.toId,   name: row.dataset.toName   };
+      document.getElementById('fromInput').value = fromStop.name;
+      document.getElementById('toInput').value   = toStop.name;
+      document.querySelectorAll('.topbar-tab').forEach(t => t.classList.toggle('active', t.dataset.view === 'trip'));
+      depView.classList.add('hidden');
+      tripView.classList.add('active');
+      planTrip();
+    });
+  });
+
+  // Delete buttons
+  list.querySelectorAll('[data-fav-stop-id]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await sb.from('favourite_stops').delete().eq('id', btn.dataset.favStopId);
+      loadFavourites();
+    });
+  });
+  list.querySelectorAll('[data-fav-route-id]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await sb.from('favourite_routes').delete().eq('id', btn.dataset.favRouteId);
+      loadFavourites();
+    });
+  });
+}
+
+function stopModeIcon(mode) {
+  return { train:'🚆', metro:'🚇', bus:'🚌', ferry:'⛴', lrt:'🚊' }[mode] || '📍';
+}
+
+async function toggleFavStop(stopId, stopName, mode) {
+  const existing = favStops.find(s => s.stop_id === stopId);
+  if (existing) {
+    await sb.from('favourite_stops').delete().eq('id', existing.id);
+  } else {
+    await sb.from('favourite_stops').insert({ stop_id: stopId, stop_name: stopName, stop_mode: mode, user_id: user.id });
+  }
+  await loadFavourites();
+}
+
+async function addFavRoute(fromId, fromName, toId, toName) {
+  const label = `${fromName} → ${toName}`;
+  const existing = favRoutes.find(r => r.from_stop_id === fromId && r.to_stop_id === toId);
+  if (existing) {
+    await sb.from('favourite_routes').delete().eq('id', existing.id);
+  } else {
+    await sb.from('favourite_routes').insert({ label, from_stop_id: fromId, from_stop_name: fromName, to_stop_id: toId, to_stop_name: toName, user_id: user.id });
+  }
+  await loadFavourites();
+}
+
+// Favourites panel toggle
+document.getElementById('favToggle').addEventListener('click', () => {
+  favOpen = !favOpen;
+  document.getElementById('favList').style.display = favOpen ? '' : 'none';
+  document.getElementById('favChevron').textContent = favOpen ? '▾' : '▸';
+});
+
+loadFavourites();
+
+/* ── Map ───────────────────────────────────────────────────────────────── */
+  const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-33.8688, 151.2093], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+  const MODE_COLOR = { train:'#002664', metro:'#009B77', bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E' };
+
+  function updateMapStops(stops, userLat, userLon) {
+    stopMarkers.forEach(m => m.remove());
+    stopMarkers = [];
+
+    // User location pulse
+    if (userLat && userLon) {
+      const youIcon = L.divIcon({
+        html: `<div style="width:14px;height:14px;background:#002664;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(0,38,100,0.2)"></div>`,
+        iconSize: [14, 14], iconAnchor: [7, 7], className: ''
+      });
+      stopMarkers.push(L.marker([userLat, userLon], { icon: youIcon }).addTo(map));
+    }
+
+    stops.forEach(s => {
+      if (!s.lat && !s.lon) return;
+      const col = MODE_COLOR[s.mode] || '#555';
+      const icon = L.divIcon({
+        html: `<div style="width:10px;height:10px;background:${col};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>`,
+        iconSize: [10, 10], iconAnchor: [5, 5], className: ''
+      });
+      const marker = L.marker([s.lat, s.lon], { icon })
+        .addTo(map)
+        .bindPopup(`<strong>${s.name}</strong><br>${s.lines.join(' · ') || s.mode}`);
+      stopMarkers.push(marker);
+    });
+  }
+
+  /* ── Clock ──────────────────────────────────────────────────────────────── */
   function tick() {
     const now = new Date();
     document.getElementById('clock').textContent =
@@ -895,163 +1115,165 @@
   tick();
   setInterval(tick, 1000);
 
-  /* ── UI tab interactions ─────────────────────────────────────────────── */
-  const MODE_BTN_MAP = { 'Train': 'train', 'Bus': 'bus', 'Ferry': 'ferry', 'LRT': 'lrt' };
-  document.querySelectorAll('.mode-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      const label = b.textContent.replace(/\p{Emoji}/u, '').trim();
-      const wasOn = b.classList.contains('on');
-      document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('on'));
-      if (!wasOn) {
-        b.classList.add('on');
-        activeMode = MODE_BTN_MAP[label] || 'all';
-      } else {
-        activeMode = 'all'; // second click deselects → show all
-      }
-      applyModeFilter();
-    });
-  });
-  document.querySelectorAll('.f-chip').forEach(c =>
-    c.addEventListener('click', () => {
-      document.querySelectorAll('.f-chip').forEach(x => x.classList.remove('on'));
-      c.classList.add('on');
-    })
-  );
-  document.querySelectorAll('.topbar-tab').forEach(t =>
+  /* ── Tab switching ───────────────────────────────────────────────────────── */
+  const depView  = document.querySelector('.departures-view');
+  const tripView = document.getElementById('tripView');
+
+  document.querySelectorAll('.topbar-tab').forEach(t => {
     t.addEventListener('click', () => {
       document.querySelectorAll('.topbar-tab').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
-    })
-  );
+      const view = t.dataset.view;
+      depView.classList.toggle('hidden', view !== 'overview');
+      tripView.classList.toggle('active', view === 'trip');
+      if (view === 'alerts') {
+        document.getElementById('alertsPanel').scrollIntoView({ behavior: 'smooth' });
+        depView.classList.remove('hidden');
+      }
+      if (view === 'trip') document.getElementById('fromInput').focus();
+    });
+  });
 
-  /* ── Live departures ─────────────────────────────────────────────────── */
-  const LINE_COLORS = {
-    t1:'#F5A81C', t2:'#0098CD', t3:'#F77F00', t4:'#EB4486',
-    t5:'#C669A4', t8:'#00AF64', t9:'#D4292E',
-    train:'#002664', metro:'#009B77',
-    bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E',
-  };
+  /* ── Mode filter buttons ─────────────────────────────────────────────────── */
+  const MODE_BTN_MAP = { 'Train':'train', 'Bus':'bus', 'Ferry':'ferry', 'LRT':'lrt' };
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const label  = b.textContent.replace(/\p{Emoji}/u, '').trim();
+      const wasOn  = b.classList.contains('on');
+      document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('on'));
+      activeMode = (!wasOn) ? (MODE_BTN_MAP[label] || 'all') : 'all';
+      if (!wasOn) b.classList.add('on');
+      activeLineFilter = 'all';
+      applyFilters();
+    });
+  });
 
-  let currentStopId   = '10101100';
-  let currentStopName = 'Central Station';
+  /* ── Stats ───────────────────────────────────────────────────────────────── */
+  function updateStats(departures) {
+    const total     = departures.length;
+    const cancelled = departures.filter(d => d.cancelled).length;
+    const delayed   = departures.filter(d => !d.cancelled && d.delay > 0).length;
+    const onTime    = total - cancelled - delayed;
+    const pct       = total > 0 ? Math.round((onTime / total) * 100) : 0;
 
-  // ── Nearby stops ──────────────────────────────────────────────────────────
-  const MODE_TAG = {
-    train: { letter: 'T', color: '#002664' },
-    metro: { letter: 'M', color: '#009B77' },
-    lrt:   { letter: 'L', color: '#7E2A8E' },
-    bus:   { letter: 'B', color: '#00B5B8' },
-    ferry: { letter: 'F', color: '#005AA3' },
-  };
+    document.getElementById('statOnTime').textContent    = total > 0 ? pct + '%' : '—';
+    document.getElementById('statDelayed').textContent   = total > 0 ? delayed   : '—';
+    document.getElementById('statCancelled').textContent = total > 0 ? cancelled : '—';
 
-  function renderStopList(stops) {
-    const scroll = document.getElementById('stopScroll');
-    if (!stops.length) {
-      scroll.innerHTML = '<div style="padding:20px 16px;color:#aaa;font-size:12px">No stops found nearby.</div>';
+    const onTimeSub = document.getElementById('statOnTimeSub');
+    onTimeSub.className = 'stat-delta ' + (pct >= 80 ? 'up' : 'dn');
+    onTimeSub.textContent = total > 0 ? `${onTime} of ${total}` : '';
+  }
+
+  /* ── Alerts ──────────────────────────────────────────────────────────────── */
+  function updateAlerts(departures) {
+    const issues    = departures.filter(d => d.cancelled || d.delay > 2);
+    const container = document.getElementById('alertsContainer');
+    const countEl   = document.getElementById('alertCount');
+    countEl.textContent = issues.length;
+    countEl.style.display = issues.length ? '' : 'none';
+
+    if (!issues.length) {
+      container.innerHTML = '<div style="padding:20px 16px;color:#aaa;font-size:12px">No active alerts for this stop.</div>';
       return;
     }
-    scroll.innerHTML = stops.map((s, i) => {
-      const tag   = MODE_TAG[s.mode] || MODE_TAG.bus;
-      const km    = s.dist >= 1000 ? (s.dist/1000).toFixed(1)+'km' : s.dist+'m';
-      const lines = s.lines.slice(0,6).join(' · ') || '—';
-      return `<div class="stop-row${i===0?' active':''}" data-stop-id="${s.id}" data-stop-name="${escHtml(s.name)}">
-        <div class="stop-type-tag" style="background:${tag.color};color:#fff">${tag.letter}</div>
-        <div class="stop-details">
-          <div class="stop-title">${escHtml(s.name)}</div>
-          <div class="stop-lines">${escHtml(lines)}</div>
+    container.innerHTML = issues.slice(0, 8).map(d => {
+      const isCancelled = d.cancelled;
+      const sevClass    = isCancelled ? 'sev-critical' : 'sev-warn';
+      const sevLabel    = isCancelled ? 'Cancelled' : 'Delayed';
+      const msg         = isCancelled
+        ? 'Service has been cancelled.'
+        : `Running approximately ${d.delay} min late.`;
+      const col = LINE_COLORS[d.lineClass] || '#555';
+      return `<div class="alert-card">
+        <div class="alert-severity ${sevClass}">${sevLabel}</div>
+        <div class="alert-headline">${escHtml(d.line)} → ${escHtml(d.destination)}</div>
+        <div class="alert-body-text">${msg}${d.platform ? ' Platform ' + escHtml(d.platform) + '.' : ''}</div>
+        <div class="alert-footer">
+          <div class="alert-lines"><div class="alert-line-pip" style="background:${col};width:28px;height:5px;border-radius:1px"></div></div>
+          <div class="alert-time-text">${d.time}</div>
         </div>
-        <div class="stop-km">${km}</div>
       </div>`;
     }).join('');
+  }
 
-    // Wire clicks
-    scroll.querySelectorAll('.stop-row').forEach(r => {
-      r.addEventListener('click', () => {
-        scroll.querySelectorAll('.stop-row').forEach(x => x.classList.remove('active'));
-        r.classList.add('active');
-        currentStopId   = r.dataset.stopId;
-        currentStopName = r.dataset.stopName;
-        document.querySelector('.board-stop-name').textContent = currentStopName;
-        loadDepartures();
+  /* ── Filter chips ────────────────────────────────────────────────────────── */
+  function buildFilterChips(departures) {
+    const bar   = document.querySelector('.filter-bar');
+    const lines = [...new Set(departures.map(d => d.line).filter(Boolean))].sort();
+    bar.innerHTML =
+      `<div class="f-chip on" data-filter="all">All</div>` +
+      lines.map(l => `<div class="f-chip" data-filter="${escHtml(l)}">${escHtml(l)}</div>`).join('') +
+      `<div class="f-chip" data-filter="ontime">On time</div>
+       <div class="f-chip" data-filter="delayed">Delayed</div>
+       <div class="f-chip" data-filter="cancelled">Cancelled</div>`;
+
+    bar.querySelectorAll('.f-chip').forEach(c => {
+      c.addEventListener('click', () => {
+        bar.querySelectorAll('.f-chip').forEach(x => x.classList.remove('on'));
+        c.classList.add('on');
+        activeLineFilter = c.dataset.filter;
+        applyFilters();
       });
     });
-
-    // Auto-load departures for first stop
-    const first = stops[0];
-    currentStopId   = first.id;
-    currentStopName = first.name;
-    document.querySelector('.board-stop-name').textContent = first.name;
-    loadDepartures();
   }
 
-  async function loadNearbyStops(lat, lon) {
-    const radius = 2000;
-    document.getElementById('nearbyLabel').textContent = 'Nearby — loading…';
-    try {
-      const res  = await fetch(`/api/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      const km = (radius/1000).toFixed(1);
-      document.getElementById('nearbyLabel').textContent = `Nearby — ${km} km radius`;
-      renderStopList(data.stops || []);
-    } catch (e) {
-      document.getElementById('nearbyLabel').textContent = 'Nearby stops';
-      document.getElementById('stopScroll').innerHTML =
-        '<div style="padding:20px 16px;color:#aaa;font-size:12px">Could not load nearby stops.</div>';
-    }
+  /* ── Combined filter & paint ─────────────────────────────────────────────── */
+  function applyFilters() {
+    let filtered = allDepartures;
+    if (activeMode !== 'all')
+      filtered = filtered.filter(d => d.mode === activeMode);
+    if (activeLineFilter === 'ontime')
+      filtered = filtered.filter(d => !d.cancelled && d.delay <= 0);
+    else if (activeLineFilter === 'delayed')
+      filtered = filtered.filter(d => !d.cancelled && d.delay > 0);
+    else if (activeLineFilter === 'cancelled')
+      filtered = filtered.filter(d => d.cancelled);
+    else if (activeLineFilter !== 'all')
+      filtered = filtered.filter(d => d.line === activeLineFilter);
+    paintBoard(filtered);
   }
 
-  // Load with Sydney CBD default on start
-  loadNearbyStops(-33.8688, 151.2093);
+  /* ── Board header meta ───────────────────────────────────────────────────── */
+  function updateBoardMeta(departures) {
+    const modes      = [...new Set(departures.map(d => d.mode))];
+    const modeLabels = modes.map(m => MODE_META[m]?.label || m).join(', ') || 'No data';
+    document.getElementById('boardModes').textContent = modeLabels;
+    document.getElementById('boardCount').textContent = `${departures.length} departures`;
+  }
+
+  /* ── Render departures ───────────────────────────────────────────────────── */
+  function renderDepartures(departures) {
+    allDepartures    = departures;
+    activeLineFilter = 'all';
+    buildFilterChips(departures);
+    updateStats(departures);
+    updateAlerts(departures);
+    updateBoardMeta(departures);
+    applyFilters();
+  }
 
   function countdownClass(mins, cancelled) {
-    if (cancelled) return 'now';
-    if (mins <= 2)  return 'now';
-    if (mins <= 8)  return 'soon';
+    if (cancelled || mins <= 2) return 'now';
+    if (mins <= 8) return 'soon';
     return 'ok';
   }
 
   function occDots(occ) {
-    // occ: TfNSW string — MANY_SEATS | FEW_SEATS | STANDING_ONLY | null
-    const map = { MANY_SEATS: 1, FEW_SEATS: 2, STANDING_ONLY: 3 };
-    const level = map[occ] || 0;
-    const dotClass = level === 1 ? 'f-low' : level === 2 ? 'f-med' : level === 3 ? 'f-high' : '';
+    const lvlMap = { MANY_SEATS:1, FEW_SEATS:2, STANDING_ONLY:3 };
+    const level  = lvlMap[occ] || 0;
+    const cls    = level === 1 ? 'f-low' : level === 2 ? 'f-med' : level === 3 ? 'f-high' : '';
     return [1,2,3,4,5].map(i =>
-      `<div class="occ-dot ${i <= level ? dotClass : ''}"></div>`
+      `<div class="occ-dot ${i <= level ? cls : ''}"></div>`
     ).join('');
   }
 
-  const MODE_META = {
-    train:  { label: 'Train',      icon: '🚆', color: 'var(--navy)', order: 1 },
-    metro:  { label: 'Metro',      icon: '🚇', color: '#009B77',     order: 2 },
-    lrt:    { label: 'Light Rail', icon: '🚊', color: 'var(--lrt)',  order: 3 },
-    bus:    { label: 'Bus',        icon: '🚌', color: 'var(--bus)',  order: 4 },
-    ferry:  { label: 'Ferry',      icon: '⛴',  color: 'var(--ferry)',order: 5 },
-  };
-
-  let allDepartures  = [];
-  let activeMode     = 'all';
-
-  function renderDepartures(departures) {
-    allDepartures = departures;
-    applyModeFilter();
-  }
-
-  function applyModeFilter() {
-    const filtered = activeMode === 'all'
-      ? allDepartures
-      : allDepartures.filter(d => d.mode === activeMode);
-    paintBoard(filtered);
-  }
-
   function paintBoard(departures) {
-    const board = document.querySelector('.board-scroll');
+    const board = document.getElementById('boardScroll');
     if (!departures.length) {
-      board.innerHTML = '<div style="padding:32px 24px;color:#999;font-size:13px;">No departures found.</div>';
+      board.innerHTML = '<div style="padding:32px 24px;color:#999;font-size:13px">No departures match the current filter.</div>';
       return;
     }
-
-    // Group by mode, ordered
     const groups = {};
     for (const d of departures) {
       const m = d.mode || 'bus';
@@ -1061,42 +1283,37 @@
     const orderedModes = Object.keys(groups).sort(
       (a, b) => (MODE_META[a]?.order ?? 9) - (MODE_META[b]?.order ?? 9)
     );
-
     let html = '';
     for (const mode of orderedModes) {
-      const meta = MODE_META[mode] || { label: mode, icon: '🚌', color: '#555' };
+      const meta = MODE_META[mode] || { label: mode, icon: '🚌' };
       html += `<div class="dir-group">
-        <div class="dir-heading mode-${mode}">
-          <span style="margin-right:6px">${meta.icon}</span>${meta.label}
+        <div class="dir-heading mode-${escHtml(mode)}">
+          <span style="margin-right:6px">${meta.icon}</span>${escHtml(meta.label)}
         </div>`;
       for (const d of groups[mode]) {
-        const color   = LINE_COLORS[d.lineClass] || '#555';
-        const cdClass = countdownClass(d.minsAway, d.cancelled);
-        const cdText  = d.cancelled ? 'CANC' : d.minsAway <= 0 ? 'Now' : `${d.minsAway} min`;
+        const color     = LINE_COLORS[d.lineClass] || '#555';
+        const cdClass   = countdownClass(d.minsAway, d.cancelled);
+        const cdText    = d.cancelled ? 'CANC' : d.minsAway <= 0 ? 'Now' : `${d.minsAway} min`;
         const statusTag = d.cancelled
           ? '<div class="status-tag cancelled">Cancelled</div>'
           : d.delay > 0
             ? `<div class="status-tag delayed">+${d.delay} min</div>`
             : '<div class="status-tag ontime">On time</div>';
-        const via  = d.via  ? `<div class="dep-dest-via">${escHtml(d.via)}</div>` : '';
-        const plat = d.platform || '';
-
+        const via  = d.via      ? `<div class="dep-dest-via">${escHtml(d.via)}</div>`      : '';
+        const plat = d.platform ? escHtml(d.platform)                                       : '';
         html += `<div class="dep-row">
           <div class="dep-mode-icon">${meta.icon}</div>
           <div><span class="line-badge" style="background:${color}">
-            <span class="line-dot"></span>${escHtml(d.line)}
+            <span class="line-dot"></span>${escHtml(d.line || '?')}
           </span></div>
           <div class="dep-dest">
-            <div class="dep-dest-primary">${escHtml(d.destination)}</div>
+            <div class="dep-dest-primary">${escHtml(d.destination || '—')}</div>
             ${via}
           </div>
-          <div class="dep-time">${d.time}</div>
+          <div class="dep-time">${escHtml(d.time || '')}</div>
           <div class="dep-countdown ${cdClass}">${cdText}</div>
-          <div class="dep-platform" style="font-size:11px;color:var(--mid)">${escHtml(plat)}</div>
-          <div class="dep-status">
-            ${statusTag}
-            <div class="occ-dots">${occDots(d.occupancy)}</div>
-          </div>
+          <div class="dep-platform">${plat}</div>
+          <div class="dep-status">${statusTag}<div class="occ-dots">${occDots(d.occupancy)}</div></div>
         </div>`;
       }
       html += '</div>';
@@ -1104,12 +1321,13 @@
     board.innerHTML = html;
   }
 
+  /* ── Load departures ─────────────────────────────────────────────────────── */
   async function loadDepartures() {
-    const refreshEl = document.querySelector('.refresh-time');
+    const refreshEl = document.getElementById('refreshTime');
     if (refreshEl) refreshEl.textContent = 'Refreshing…';
     try {
-      const res  = await fetch(`/api/departures?stopId=${currentStopId}&limit=30`);
-      if (!res.ok) throw new Error(`API error ${res.status}`);
+      const res  = await fetch(`/api/departures?stopId=${encodeURIComponent(currentStopId)}&limit=40`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       renderDepartures(data.departures || []);
@@ -1117,68 +1335,147 @@
       if (refreshEl) refreshEl.textContent =
         `Updated ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     } catch (e) {
-      console.error('departures fetch:', e);
+      console.error('departures:', e);
       if (refreshEl) refreshEl.textContent = `Error — ${e.message}`;
-      document.querySelector('.board-scroll').innerHTML =
+      document.getElementById('boardScroll').innerHTML =
         `<div style="padding:32px 24px;color:#DC2626;font-size:13px">
-          Could not load departures: <strong>${e.message}</strong><br>
-          <span style="color:#999;font-size:11px;margin-top:6px;display:block">Check that TFNSW_API_KEY is set in your environment.</span>
+          Could not load departures: <strong>${escHtml(e.message)}</strong><br>
+          <span style="color:#999;font-size:11px;margin-top:6px;display:block">Ensure TFNSW_API_KEY is set and the server is running.</span>
         </div>`;
+      updateStats([]);
+      updateAlerts([]);
     }
   }
 
-  // Load on start, then every 30 s
+  clearInterval(departureTimer);
   loadDepartures();
-  setInterval(loadDepartures, 30_000);
+  departureTimer = setInterval(loadDepartures, 30_000);
 
-  /* ── Stop search (left panel) ───────────────────────────────────────── */
+  /* ── Stop list ───────────────────────────────────────────────────────────── */
+  function renderStopList(stops, autoLoad = true) {
+    const scroll = document.getElementById('stopScroll');
+    if (!stops.length) {
+      scroll.innerHTML = '<div style="padding:20px 16px;color:#aaa;font-size:12px">No stops found.</div>';
+      return;
+    }
+    scroll.innerHTML = stops.map((s, i) => {
+      const tag  = MODE_TAG[s.mode] || MODE_TAG.bus;
+      const dist = (s.dist != null) ? (s.dist >= 1000 ? (s.dist/1000).toFixed(1)+'km' : s.dist+'m') : '';
+      const lines = (s.lines || []).slice(0, 6).join(' · ') || '—';
+      const isStarred = favStops.some(f => f.stop_id === s.id);
+      return `<div class="stop-row${i === 0 ? ' active' : ''}"
+                   data-stop-id="${escHtml(s.id)}"
+                   data-stop-name="${escHtml(s.name)}"
+                   data-stop-mode="${escHtml(s.mode || 'bus')}">
+        <div class="stop-type-tag" style="background:${tag.color};color:#fff">${tag.letter}</div>
+        <div class="stop-details">
+          <div class="stop-title">${escHtml(s.name)}</div>
+          <div class="stop-lines">${escHtml(lines)}</div>
+        </div>
+        <button class="star-btn ${isStarred ? 'starred' : ''}" title="${isStarred ? 'Remove from favourites' : 'Add to favourites'}">${isStarred ? '★' : '☆'}</button>
+        <div class="stop-km">${dist}</div>
+      </div>`;
+    }).join('');
+
+    scroll.querySelectorAll('.stop-row').forEach(r => {
+      // Star button
+      r.querySelector('.star-btn')?.addEventListener('click', async e => {
+        e.stopPropagation();
+        await toggleFavStop(r.dataset.stopId, r.dataset.stopName, r.dataset.stopMode);
+        // update star in-place
+        const isNowStarred = favStops.some(f => f.stop_id === r.dataset.stopId);
+        const btn = r.querySelector('.star-btn');
+        btn.textContent = isNowStarred ? '★' : '☆';
+        btn.classList.toggle('starred', isNowStarred);
+      });
+
+      // Row click → load departures
+      r.addEventListener('click', () => {
+        scroll.querySelectorAll('.stop-row').forEach(x => x.classList.remove('active'));
+        r.classList.add('active');
+        currentStopId   = r.dataset.stopId;
+        currentStopName = r.dataset.stopName;
+        document.querySelector('.board-stop-name').textContent = currentStopName;
+        clearInterval(departureTimer);
+        loadDepartures();
+        departureTimer = setInterval(loadDepartures, 30_000);
+      });
+    });
+
+    if (autoLoad && stops.length) {
+      currentStopId   = stops[0].id;
+      currentStopName = stops[0].name;
+      document.querySelector('.board-stop-name').textContent = stops[0].name;
+      clearInterval(departureTimer);
+      loadDepartures();
+      departureTimer = setInterval(loadDepartures, 30_000);
+    }
+  }
+
+  /* ── Nearby stops ────────────────────────────────────────────────────────── */
+  async function loadNearbyStops(lat, lon) {
+    document.getElementById('nearbyLabel').textContent = 'Nearby — loading…';
+    try {
+      const res  = await fetch(`/api/nearby?lat=${lat}&lon=${lon}&radius=2000`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      nearbyStops = data.stops || [];
+      document.getElementById('nearbyLabel').textContent = `Nearby — 2.0 km radius`;
+      renderStopList(nearbyStops);
+      map.setView([lat, lon], 14);
+      updateMapStops(nearbyStops, lat, lon);
+    } catch (e) {
+      console.error('nearby:', e);
+      document.getElementById('nearbyLabel').textContent = 'Nearby stops';
+      document.getElementById('stopScroll').innerHTML =
+        `<div style="padding:20px 16px;color:#aaa;font-size:12px">Could not load nearby stops: ${escHtml(e.message)}</div>`;
+    }
+  }
+
+  loadNearbyStops(-33.8688, 151.2093);
+
+  /* ── Stop search ─────────────────────────────────────────────────────────── */
   const searchInput = document.querySelector('.search-field input');
   let searchTimer;
-  searchInput?.addEventListener('input', () => {
+  searchInput.addEventListener('input', () => {
     clearTimeout(searchTimer);
     const q = searchInput.value.trim();
-    if (!q) return;
+    if (!q) {
+      document.getElementById('nearbyLabel').textContent = `Nearby — 2.0 km radius`;
+      renderStopList(nearbyStops, false);
+      return;
+    }
     searchTimer = setTimeout(async () => {
+      document.getElementById('nearbyLabel').textContent = 'Searching…';
       try {
         const res  = await fetch(`/api/stop?q=${encodeURIComponent(q)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        console.log('Stop results:', data.locations);
-      } catch (e) { /* ignore */ }
-    }, 400);
-  });
-
-  /* ── Tab switching (Departures ↔ Trip Planner) ──────────────────────── */
-  const depView  = document.querySelector('.departures-view');
-  const tripView = document.getElementById('tripView');
-
-  document.querySelectorAll('.topbar-tab').forEach(t => {
-    t.addEventListener('click', () => {
-      document.querySelectorAll('.topbar-tab').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      const label = t.textContent.trim();
-      if (label === 'Trip Planner') {
-        depView.classList.add('hidden');
-        tripView.classList.add('active');
-        document.getElementById('fromInput').focus();
-      } else {
-        depView.classList.remove('hidden');
-        tripView.classList.remove('active');
+        if (data.error) throw new Error(data.error);
+        const stops = (data.locations || []).map(l => ({
+          id: l.id, name: l.name,
+          mode: (l.modes && l.modes[0]) ? 'train' : 'bus',
+          lines: [], dist: null,
+          lat: l.lat, lon: l.lon,
+        }));
+        document.getElementById('nearbyLabel').textContent =
+          stops.length ? `Results for "${q}"` : `No results for "${q}"`;
+        renderStopList(stops, false);
+      } catch (e) {
+        console.error('stop search:', e);
+        document.getElementById('nearbyLabel').textContent = 'Search failed';
       }
-    });
+    }, 350);
   });
 
-  /* ── Trip Planner ────────────────────────────────────────────────────── */
-  const LINE_COLORS_TRIP = {
-    t1:'#F5A81C', t2:'#0098CD', t3:'#F77F00', t4:'#EB4486',
-    t5:'#C669A4', t8:'#00AF64', t9:'#D4292E',
-    train:'#002664', metro:'#009B77',
-    bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E',
-  };
+  /* ── GPS indicator ───────────────────────────────────────────────────────── */
+  function updateGpsIndicator(label, lat, lon) {
+    document.getElementById('gpsIndicatorText').textContent =
+      `${label}  ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  }
 
-  let fromStop = null; // { id, name, lat, lon, isGPS }
-  let toStop   = null; // { id, name }
-
-  // ── Autocomplete ────────────────────────────────────────────────────────
+  /* ── Trip Planner ────────────────────────────────────────────────────────── */
   function makeAC(inputEl, listEl, onSelect) {
     let timer;
     inputEl.addEventListener('input', () => {
@@ -1188,9 +1485,10 @@
       timer = setTimeout(async () => {
         try {
           const res  = await fetch(`/api/stop?q=${encodeURIComponent(q)}`);
+          if (!res.ok) throw new Error();
           const data = await res.json();
           renderAC(listEl, data.locations || [], onSelect);
-        } catch (e) { listEl.style.display = 'none'; }
+        } catch { listEl.style.display = 'none'; }
       }, 300);
     });
     inputEl.addEventListener('blur', () => {
@@ -1200,14 +1498,12 @@
 
   function renderAC(listEl, locs, onSelect) {
     if (!locs.length) { listEl.style.display = 'none'; return; }
-    listEl.innerHTML = locs.map(l => {
-      const tag = l.type === 'stop' ? 'T' : '📍';
-      return `<div class="ac-item" data-id="${l.id}" data-name="${escHtml(l.name)}"
-                   data-lat="${l.lat||''}" data-lon="${l.lon||''}">
-        <span class="ac-mode-tag">${tag}</span>
-        ${escHtml(l.name)}
-      </div>`;
-    }).join('');
+    listEl.innerHTML = locs.map(l =>
+      `<div class="ac-item" data-id="${escHtml(l.id)}" data-name="${escHtml(l.name)}"
+            data-lat="${l.lat || ''}" data-lon="${l.lon || ''}">
+        <span class="ac-mode-tag">T</span>${escHtml(l.name)}
+      </div>`
+    ).join('');
     listEl.querySelectorAll('.ac-item').forEach(el => {
       el.addEventListener('mousedown', () => {
         onSelect({ id: el.dataset.id, name: el.dataset.name,
@@ -1219,63 +1515,52 @@
   }
 
   makeAC(
-    document.getElementById('fromInput'),
-    document.getElementById('fromAC'),
-    stop => { fromStop = stop; document.getElementById('fromInput').value = stop.name; }
+    document.getElementById('fromInput'), document.getElementById('fromAC'),
+    s => { fromStop = s; document.getElementById('fromInput').value = s.name; }
   );
   makeAC(
-    document.getElementById('toInput'),
-    document.getElementById('toAC'),
-    stop => { toStop = stop; document.getElementById('toInput').value = stop.name; }
+    document.getElementById('toInput'), document.getElementById('toAC'),
+    s => { toStop = s; document.getElementById('toInput').value = s.name; }
   );
 
-  // ── GPS ─────────────────────────────────────────────────────────────────
+  const GPS_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" opacity=".3"/></svg>';
+
   document.getElementById('gpsBtn').addEventListener('click', () => {
     const btn = document.getElementById('gpsBtn');
-    const GPS_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" opacity=".3"/></svg>';
-    if (!navigator.geolocation) {
-      showFieldError('fromWrap', 'GPS not supported by this browser');
-      return;
-    }
+    if (!navigator.geolocation) { showFieldError('fromWrap', 'GPS not supported'); return; }
     btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:1.5px"></div>';
     navigator.geolocation.getCurrentPosition(
       pos => {
-        fromStop = { id: null, name: 'Current Location',
+        fromStop = { id:null, name:'Current Location',
           lat: pos.coords.latitude, lon: pos.coords.longitude, isGPS: true };
         document.getElementById('fromInput').value = 'Current Location';
         btn.classList.add('active');
         btn.innerHTML = GPS_SVG;
+        updateGpsIndicator('Current Location', pos.coords.latitude, pos.coords.longitude);
+        loadNearbyStops(pos.coords.latitude, pos.coords.longitude);
       },
       err => {
         btn.innerHTML = GPS_SVG;
-        const msg = err.code === 1 ? 'Location access denied — please type a stop instead'
-                  : err.code === 3 ? 'Location timed out — please type a stop instead'
-                  : 'Could not get location — please type a stop instead';
-        showFieldError('fromWrap', msg);
+        const msgs = { 1:'Location access denied', 3:'Location timed out' };
+        showFieldError('fromWrap', (msgs[err.code] || 'Could not get location') + ' — please type a stop instead');
       },
       { timeout: 10000, maximumAge: 60000 }
     );
   });
 
-  // ── Swap ────────────────────────────────────────────────────────────────
   document.getElementById('swapBtn').addEventListener('click', () => {
     const fi = document.getElementById('fromInput');
     const ti = document.getElementById('toInput');
     [fromStop, toStop] = [toStop, fromStop];
     [fi.value, ti.value] = [ti.value, fi.value];
-    if (fromStop?.isGPS) {
-      document.getElementById('gpsBtn').classList.add('active');
-    } else {
-      document.getElementById('gpsBtn').classList.remove('active');
-    }
+    document.getElementById('gpsBtn').classList.toggle('active', !!fromStop?.isGPS);
   });
 
-  // ── Plan Trip ───────────────────────────────────────────────────────────
   document.getElementById('planBtn').addEventListener('click', planTrip);
 
   async function planTrip() {
-    if (!fromStop) return shakeField('fromWrap');
-    if (!toStop)   return shakeField('toWrap');
+    if (!fromStop) return showFieldError('fromWrap', 'Enter a starting point');
+    if (!toStop)   return showFieldError('toWrap',   'Enter a destination');
 
     const btn     = document.getElementById('planBtn');
     const results = document.getElementById('tripResults');
@@ -1291,13 +1576,13 @@
       } else {
         params.set('fromId', fromStop.id);
       }
-
       const res  = await fetch(`/api/trip?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       renderJourneys(data.journeys || [], results);
     } catch (e) {
-      results.innerHTML = `<div class="trip-empty"><div class="trip-empty-icon">⚠️</div>${e.message}</div>`;
+      results.innerHTML = `<div class="trip-empty"><div class="trip-empty-icon">⚠️</div>${escHtml(e.message)}</div>`;
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M13 6l6 6-6 6"/></svg> Plan Trip';
@@ -1309,33 +1594,29 @@
       container.innerHTML = '<div class="trip-empty"><div class="trip-empty-icon">🚫</div>No trips found for this route.</div>';
       return;
     }
-
     let html = '';
     journeys.forEach((j, i) => {
       const best = i === 0;
       const chg  = j.interchanges === 0 ? 'Direct' : `${j.interchanges} change${j.interchanges > 1 ? 's' : ''}`;
-
-      // Build pill strip — show all legs; walks show duration if ≥ 1 min
       const pills = j.legs.map(leg => {
         if (leg.walk) {
           const mins = Math.round(leg.durationSecs / 60);
           const dist = leg.distanceM ? ` · ${leg.distanceM}m` : '';
-          return `<span class="leg-pill walk">🚶 ${mins >= 1 ? mins + 'min' + dist : 'walk'}</span><span class="leg-connector">›</span>`;
+          return `<span class="leg-pill walk">🚶 ${mins >= 1 ? mins+'min'+dist : 'walk'}</span><span class="leg-connector">›</span>`;
         }
-        const meta  = MODE_META[leg.mode] || { icon: '🚌' };
-        const col   = LINE_COLORS_TRIP[leg.lineClass] || '#555';
+        const meta  = MODE_META[leg.mode] || { icon:'🚌' };
+        const col   = LINE_COLORS[leg.lineClass] || '#555';
         const label = leg.line ? `${meta.icon} ${escHtml(leg.line)}` : meta.icon;
         return `<span class="leg-pill" style="background:${col}" title="${escHtml(leg.from)} → ${escHtml(leg.to)}">${label}</span><span class="leg-connector">›</span>`;
       }).join('').replace(/<span class="leg-connector">›<\/span>$/, '');
 
-      // Leg detail — transit legs only
       const detail = j.legs.filter(l => !l.walk && l.line).map(l => {
-        const meta = MODE_META[l.mode] || { icon: '🚌' };
-        return `${meta.icon} <span style="font-weight:600">${escHtml(l.line)}</span> ${escHtml(l.from)} → ${escHtml(l.to)} <span style="color:#aaa">${l.depTime}–${l.arrTime}</span>`;
+        const meta = MODE_META[l.mode] || { icon:'🚌' };
+        return `${meta.icon} <strong>${escHtml(l.line)}</strong> ${escHtml(l.from)} → ${escHtml(l.to)} <span style="color:#aaa">${l.depTime}–${l.arrTime}</span>`;
       }).join('<br>');
 
       const dur = j.durationMin > 0 ? `${j.durationMin} min` : '';
-
+      const isRouteFaved = favRoutes.some(r => r.from_stop_id === fromStop?.id && r.to_stop_id === toStop?.id);
       html += `<div class="journey-card${best ? ' best' : ''}">
         <div class="journey-head">
           <span class="journey-times">${j.depTime}</span>
@@ -1344,29 +1625,33 @@
           ${dur ? `<span class="journey-dur">${dur}</span>` : ''}
           <span class="journey-changes">${chg}</span>
           ${best ? '<span class="best-tag">Fastest</span>' : ''}
+          ${best && fromStop?.id && toStop?.id ? `<button class="star-btn ${isRouteFaved ? 'starred' : ''}" id="routeStarBtn" title="${isRouteFaved ? 'Remove route from favourites' : 'Save route to favourites'}">${isRouteFaved ? '★' : '☆'}</button>` : ''}
         </div>
         <div class="leg-strip">${pills}</div>
         ${detail ? `<div class="leg-detail" style="margin-top:8px;line-height:1.8">${detail}</div>` : ''}
       </div>`;
     });
+    container.innerHTML = `<div class="trip-results-label">${escHtml(fromStop.name)} → ${escHtml(toStop.name)}</div>${html}`;
 
-    container.innerHTML = `
-      <div class="trip-results-label">
-        ${escHtml(fromStop.name)} → ${escHtml(toStop.name)}
-      </div>${html}`;
+    document.getElementById('routeStarBtn')?.addEventListener('click', async () => {
+      await addFavRoute(fromStop.id, fromStop.name, toStop.id, toStop.name);
+      const btn = document.getElementById('routeStarBtn');
+      if (!btn) return;
+      const isNowFaved = favRoutes.some(r => r.from_stop_id === fromStop.id && r.to_stop_id === toStop.id);
+      btn.textContent = isNowFaved ? '★' : '☆';
+      btn.classList.toggle('starred', isNowFaved);
+    });
   }
-
-  function shakeField(id) { showFieldError(id, ''); }
 
   function showFieldError(wrapperId, msg) {
     const wrap = document.getElementById(wrapperId);
+    if (!wrap) return;
     wrap.style.borderColor = '#DC2626';
-    // remove any existing error tip
     wrap.parentElement.querySelectorAll('.field-err').forEach(e => e.remove());
     if (msg) {
-      const tip = document.createElement('div');
-      tip.className  = 'field-err';
-      tip.textContent = msg;
+      const tip = Object.assign(document.createElement('div'), {
+        className: 'field-err', textContent: msg
+      });
       tip.style.cssText = 'font-size:11px;color:#DC2626;margin-top:4px;padding-left:2px;';
       wrap.parentElement.appendChild(tip);
     }
@@ -1374,9 +1659,6 @@
       wrap.style.borderColor = '';
       wrap.parentElement.querySelectorAll('.field-err').forEach(e => e.remove());
     }, 4000);
-  }
-  function escHtml(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 </script>
 </body>

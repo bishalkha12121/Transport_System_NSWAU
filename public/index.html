@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TfNSW — Live Departures</title>
+<marquee> WELCOME TO OUR GROUP PROJECT </marquee>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -1433,7 +1434,57 @@ loadFavourites();
     }
   }
 
-  loadNearbyStops(-33.8688, 151.2093);
+  // Try live GPS first, fall back to Sydney CBD
+  let userMarker = null;
+  let watchId    = null;
+
+  function placeUserPin(lat, lon) {
+    if (userMarker) userMarker.remove();
+    const icon = L.divIcon({
+      html: `<div style="
+        width:16px;height:16px;
+        background:#002664;border:3px solid #fff;border-radius:50%;
+        box-shadow:0 0 0 5px rgba(0,38,100,0.25),0 2px 6px rgba(0,0,0,0.3)">
+      </div>`,
+      iconSize:[16,16], iconAnchor:[8,8], className:''
+    });
+    userMarker = L.marker([lat, lon], { icon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup('<strong>You are here</strong>');
+    map.setView([lat, lon], 15);
+    updateGpsIndicator('You', lat, lon);
+  }
+
+  function startWatchingLocation() {
+    if (!navigator.geolocation) {
+      loadNearbyStops(-33.8688, 151.2093);
+      return;
+    }
+    // Show spinner in GPS indicator while waiting
+    document.getElementById('gpsIndicatorText').textContent = 'Getting location…';
+
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        placeUserPin(lat, lon);
+        loadNearbyStops(lat, lon);
+        // Keep watching for movement
+        watchId = navigator.geolocation.watchPosition(
+          p => placeUserPin(p.coords.latitude, p.coords.longitude),
+          null,
+          { enableHighAccuracy: true, maximumAge: 10000 }
+        );
+      },
+      () => {
+        // Permission denied or error — fall back to Sydney CBD
+        document.getElementById('gpsIndicatorText').textContent = 'Sydney CBD  −33.8688, 151.2093';
+        loadNearbyStops(-33.8688, 151.2093);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+    );
+  }
+
+  startWatchingLocation();
 
   /* ── Stop search ─────────────────────────────────────────────────────────── */
   const searchInput = document.querySelector('.search-field input');

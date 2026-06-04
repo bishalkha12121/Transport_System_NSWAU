@@ -467,10 +467,33 @@
       height: 220px;
       flex-shrink: 0;
       overflow: hidden;
+      transition: height 0.3s ease;
     }
-    #map {
-      width: 100%; height: 100%;
+    .map-area.fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      height: 100vh !important;
+      width: 100vw !important;
+      z-index: 1000;
     }
+    #map { width: 100%; height: 100%; }
+    .map-btn {
+      position: absolute;
+      z-index: 999;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 4px;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      transition: background 0.15s;
+    }
+    .map-btn:hover { background: #fff; }
+    .map-fullscreen-btn { top: 8px; right: 8px; }
+    .map-close-btn { top: 8px; right: 8px; display: none; }
+    .map-area.fullscreen .map-fullscreen-btn { display: none; }
+    .map-area.fullscreen .map-close-btn    { display: flex; }
 
     /* Alerts */
     .alerts-section { flex: 1; overflow-y: auto; }
@@ -844,8 +867,10 @@
   <aside class="right-panel">
 
     <!-- Map -->
-    <div class="map-area">
+    <div class="map-area" id="mapArea">
       <div id="map"></div>
+      <div class="map-btn map-fullscreen-btn" id="fullscreenBtn" title="Fullscreen">⛶</div>
+      <div class="map-btn map-close-btn"      id="mapCloseBtn"  title="Exit fullscreen">✕</div>
     </div>
 
     <!-- Stats -->
@@ -1106,6 +1131,73 @@ loadFavourites();
       stopMarkers.push(marker);
     });
   }
+
+  /* ── Map fullscreen toggle ───────────────────────────────────────────────── */
+  const mapArea = document.getElementById('mapArea');
+  document.getElementById('fullscreenBtn').addEventListener('click', () => {
+    mapArea.classList.add('fullscreen');
+    setTimeout(() => map.invalidateSize(), 310);
+  });
+  document.getElementById('mapCloseBtn').addEventListener('click', () => {
+    mapArea.classList.remove('fullscreen');
+    setTimeout(() => map.invalidateSize(), 310);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      mapArea.classList.remove('fullscreen');
+      setTimeout(() => map.invalidateSize(), 310);
+    }
+  });
+
+  /* ── Vehicle tracking ────────────────────────────────────────────────────── */
+  const VEHICLE_COLORS = { train:'#002664', metro:'#009B77', bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E' };
+  const VEHICLE_ICONS  = { train:'🚆', metro:'🚇', bus:'🚌', ferry:'⛴', lrt:'🚊' };
+  let vehicleMarkers   = {};
+  let vehicleMode      = 'bus';
+
+  async function loadVehicles() {
+    try {
+      const res  = await fetch(`/api/vehicles?mode=${vehicleMode}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.error) return;
+
+      const seen = new Set();
+      for (const v of (data.vehicles || [])) {
+        seen.add(v.id);
+        const col  = VEHICLE_COLORS[v.mode] || '#555';
+        const icon = VEHICLE_ICONS[v.mode]  || '🚌';
+        const rot  = v.bearing != null ? `transform:rotate(${v.bearing}deg)` : '';
+        const div  = L.divIcon({
+          html: `<div style="width:12px;height:12px;background:${col};border:2px solid #fff;
+                   border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.35);${rot}"></div>`,
+          iconSize:[12,12], iconAnchor:[6,6], className:''
+        });
+        const popup = `<strong>${icon} ${v.route || '—'}</strong><br>${v.headsign || 'In service'}`;
+        if (vehicleMarkers[v.id]) {
+          vehicleMarkers[v.id].setLatLng([v.lat, v.lon]).setPopupContent(popup);
+        } else {
+          vehicleMarkers[v.id] = L.marker([v.lat, v.lon], { icon: div })
+            .addTo(map).bindPopup(popup);
+        }
+        vehicleMarkers[v.id].setIcon(div);
+      }
+      // Remove stale markers
+      for (const id of Object.keys(vehicleMarkers)) {
+        if (!seen.has(id)) { vehicleMarkers[id].remove(); delete vehicleMarkers[id]; }
+      }
+    } catch { /* silent */ }
+  }
+
+  // Load vehicles for the current active mode and refresh every 20s
+  function startVehicleTracking(mode) {
+    vehicleMode = mode;
+    Object.values(vehicleMarkers).forEach(m => m.remove());
+    vehicleMarkers = {};
+    loadVehicles();
+  }
+  loadVehicles();
+  setInterval(loadVehicles, 20_000);
 
   /* ── Clock ──────────────────────────────────────────────────────────────── */
   function tick() {

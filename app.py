@@ -4,6 +4,8 @@ import re
 from datetime import datetime, timezone
 from typing import Optional
 
+from google.transit import gtfs_realtime_pb2
+
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -293,6 +295,57 @@ async def trip(
     except Exception as e:
         print("trip:", e)
         return JSONResponse({"error": "Trip planning failed"}, status_code=500)
+
+
+# ── /api/vehicles ─────────────────────────────────────────────────────────────
+GTFS_MODES = {
+    "train":   "sydneytrains",
+    "metro":   "metro",
+    "bus":     "buses",
+    "ferry":   "ferries",
+    "lrt":     "lightrail",
+}
+
+@app.get("/api/vehicles")
+async def vehicles(mode: str = "bus"):
+    feed_name = GTFS_MODES.get(mode, "buses")
+    url = f"https://api.transport.nsw.gov.au/v1/gtfs/vehiclepos/{feed_name}"
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(url, headers={**hdrs(), "Accept": "application/x-google-protobuf"})
+        if r.status_code != 200:
+            return JSONResponse({"error": f"TfNSW {r.status_code}"}, status_code=r.status_code)
+
+        feed = gtfs_realtime_pb2.FeedMessage()
+        feed.ParseFromString(r.content)
+
+        result = []
+        for entity in feed.entity:
+            if not entity.HasField("vehicle"):
+                continue
+            v    = entity.vehicle
+            pos  = v.position
+            if not (pos.latitude and pos.longitude):
+                continue
+            trip     = v.trip
+            route_id = trip.route_id or ""
+            # Extract human-readable route number (e.g. "2508_632n" → "632N")
+            route_num = route_id.split("_")[-1].upper() if "_" in route_id else route_id
+            label     = v.vehicle.label or ""
+            result.append({
+                "id":      entity.id,
+                "lat":     round(pos.latitude,  6),
+                "lon":     round(pos.longitude, 6),
+                "bearing": round(pos.bearing)   if pos.bearing else None,
+                "route":   route_num,
+                "label":   label,
+                "speed":   round(pos.speed * 3.6) if pos.speed else None,  # m/s → km/h
+                "mode":    mode,
+            })
+        return {"vehicles": result, "mode": mode}
+    except Exception as e:
+        print("vehicles:", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # Static files – must be mounted last so API routes take priority

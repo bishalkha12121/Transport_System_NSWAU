@@ -495,6 +495,109 @@
     .map-area.fullscreen .map-fullscreen-btn { display: none; }
     .map-area.fullscreen .map-close-btn    { display: flex; }
 
+    /* ── Fullscreen floating panel ── */
+    .map-float-panel {
+      display: none;
+      position: absolute;
+      top: 12px; left: 12px;
+      width: 340px;
+      background: var(--white);
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      z-index: 998;
+      overflow: hidden;
+      max-height: calc(100% - 24px);
+      flex-direction: column;
+    }
+    .map-area.fullscreen .map-float-panel { display: flex; }
+
+    .float-panel-header {
+      background: var(--navy);
+      padding: 14px 16px 12px;
+      flex-shrink: 0;
+    }
+    .float-panel-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(255,255,255,0.6);
+      margin-bottom: 10px;
+    }
+    .float-fields { display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .float-field-row { display: flex; align-items: center; gap: 8px; }
+    .float-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .float-dot.from { background: #4ADE80; }
+    .float-dot.to   { background: #F87171; }
+    .float-line { width: 1px; height: 14px; background: rgba(255,255,255,0.2); margin-left: 4px; }
+    .float-input {
+      flex: 1; border: none; border-radius: 4px;
+      padding: 8px 10px; font-family: inherit; font-size: 13px;
+      color: var(--ink); background: rgba(255,255,255,0.12);
+      color: var(--white); outline: none;
+    }
+    .float-input::placeholder { color: rgba(255,255,255,0.45); }
+    .float-input:focus { background: rgba(255,255,255,0.2); }
+    .float-gps-btn {
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.6); font-size: 14px; padding: 4px;
+      border-radius: 3px; transition: color 0.15s;
+    }
+    .float-gps-btn:hover { color: #4ADE80; }
+    .float-plan-btn {
+      margin-top: 10px; width: 100%; padding: 9px;
+      background: rgba(255,255,255,0.15); color: var(--white);
+      border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .float-plan-btn:hover { background: rgba(255,255,255,0.25); }
+    .float-plan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .float-results {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .float-journey {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .float-journey:hover { background: var(--off); }
+    .float-journey.best { border-left: 3px solid var(--navy); padding-left: 13px; }
+    .float-journey-times {
+      font-family: var(--mono); font-size: 15px; font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .float-journey-meta {
+      font-size: 11px; color: var(--mid); margin-top: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .float-leg-strip { display: flex; align-items: center; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
+    .float-leg-pill {
+      padding: 2px 7px; border-radius: 3px;
+      font-size: 11px; font-weight: 700;
+      color: var(--white);
+    }
+    .float-leg-walk { font-size: 11px; color: var(--mid); }
+    .float-empty {
+      padding: 24px 16px; text-align: center;
+      color: var(--mid); font-size: 13px;
+    }
+    .float-ac {
+      position: absolute; top: calc(100% + 4px); left: 18px; right: 0;
+      background: var(--white); border-radius: 4px; z-index: 999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-height: 180px; overflow-y: auto;
+    }
+    .float-ac-item {
+      padding: 9px 12px; font-size: 13px; color: var(--ink);
+      cursor: pointer; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .float-ac-item:last-child { border-bottom: none; }
+    .float-ac-item:hover { background: var(--off); }
+
     /* Alerts */
     .alerts-section { flex: 1; overflow-y: auto; }
     .section-head {
@@ -871,6 +974,31 @@
       <div id="map"></div>
       <div class="map-btn map-fullscreen-btn" id="fullscreenBtn" title="Fullscreen">⛶</div>
       <div class="map-btn map-close-btn"      id="mapCloseBtn"  title="Exit fullscreen">✕</div>
+
+      <!-- Floating trip panel (visible in fullscreen only) -->
+      <div class="map-float-panel" id="mapFloatPanel">
+        <div class="float-panel-header">
+          <div class="float-panel-title">Plan your trip</div>
+          <div class="float-fields">
+            <div class="float-field-row">
+              <div class="float-dot from"></div>
+              <input class="float-input" id="floatFrom" type="text" placeholder="Starting point" autocomplete="off"/>
+              <button class="float-gps-btn" id="floatGpsBtn" title="Use my location">📍</button>
+              <div class="float-ac" id="floatFromAC" style="display:none"></div>
+            </div>
+            <div style="margin-left:4px"><div class="float-line"></div></div>
+            <div class="float-field-row">
+              <div class="float-dot to"></div>
+              <input class="float-input" id="floatTo" type="text" placeholder="Destination" autocomplete="off"/>
+              <div class="float-ac" id="floatToAC" style="display:none"></div>
+            </div>
+          </div>
+          <button class="float-plan-btn" id="floatPlanBtn">Search routes</button>
+        </div>
+        <div class="float-results" id="floatResults">
+          <div class="float-empty">Enter a start and destination above</div>
+        </div>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -1129,6 +1257,158 @@ loadFavourites();
         .addTo(map)
         .bindPopup(`<strong>${s.name}</strong><br>${s.lines.join(' · ') || s.mode}`);
       stopMarkers.push(marker);
+    });
+  }
+
+  /* ── Floating map panel ─────────────────────────────────────────────────── */
+  let floatFrom = null;
+  let floatTo   = null;
+  let routeLines = [];
+
+  function clearRouteLines() {
+    routeLines.forEach(l => l.remove());
+    routeLines = [];
+  }
+
+  function makeFloatAC(inputEl, listEl, onSelect) {
+    let timer;
+    inputEl.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = inputEl.value.trim();
+      if (q.length < 2) { listEl.style.display = 'none'; return; }
+      timer = setTimeout(async () => {
+        try {
+          const res  = await fetch(`/api/stop?q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          const locs = data.locations || [];
+          if (!locs.length) { listEl.style.display = 'none'; return; }
+          listEl.innerHTML = locs.map(l =>
+            `<div class="float-ac-item" data-id="${escHtml(l.id)}" data-name="${escHtml(l.name)}"
+                  data-lat="${l.lat||''}" data-lon="${l.lon||''}">
+               📍 ${escHtml(l.name)}
+             </div>`
+          ).join('');
+          listEl.querySelectorAll('.float-ac-item').forEach(el => {
+            el.addEventListener('mousedown', () => {
+              onSelect({ id: el.dataset.id, name: el.dataset.name, lat: el.dataset.lat, lon: el.dataset.lon });
+              listEl.style.display = 'none';
+            });
+          });
+          listEl.style.display = 'block';
+        } catch { listEl.style.display = 'none'; }
+      }, 300);
+    });
+    inputEl.addEventListener('blur', () => setTimeout(() => { listEl.style.display = 'none'; }, 150));
+  }
+
+  makeFloatAC(
+    document.getElementById('floatFrom'), document.getElementById('floatFromAC'),
+    s => { floatFrom = s; document.getElementById('floatFrom').value = s.name; }
+  );
+  makeFloatAC(
+    document.getElementById('floatTo'), document.getElementById('floatToAC'),
+    s => { floatTo = s; document.getElementById('floatTo').value = s.name; }
+  );
+
+  document.getElementById('floatGpsBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos => {
+      floatFrom = { id: null, name: 'Current Location', lat: pos.coords.latitude, lon: pos.coords.longitude, isGPS: true };
+      document.getElementById('floatFrom').value = 'Current Location';
+    });
+  });
+
+  document.getElementById('floatPlanBtn').addEventListener('click', async () => {
+    if (!floatFrom || !floatTo) return;
+    const btn     = document.getElementById('floatPlanBtn');
+    const results = document.getElementById('floatResults');
+    btn.disabled  = true;
+    btn.textContent = 'Searching…';
+    results.innerHTML = '<div class="float-empty">Finding routes…</div>';
+    clearRouteLines();
+
+    try {
+      const params = new URLSearchParams({ toId: floatTo.id });
+      if (floatFrom.isGPS) { params.set('fromLat', floatFrom.lat); params.set('fromLon', floatFrom.lon); }
+      else params.set('fromId', floatFrom.id);
+
+      const res  = await fetch(`/api/trip?${params}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const journeys = data.journeys || [];
+      if (!journeys.length) { results.innerHTML = '<div class="float-empty">No routes found.</div>'; return; }
+
+      // Draw first journey route on map
+      drawRouteOnMap(journeys[0]);
+      renderFloatJourneys(journeys, results);
+    } catch (e) {
+      results.innerHTML = `<div class="float-empty">⚠️ ${escHtml(e.message)}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Search routes';
+    }
+  });
+
+  function drawRouteOnMap(journey) {
+    clearRouteLines();
+    const LEG_COLORS = { train:'#002664', metro:'#009B77', bus:'#00B5B8', ferry:'#005AA3', lrt:'#7E2A8E', walk:'#aaaaaa' };
+    const bounds = [];
+
+    for (const leg of journey.legs) {
+      if (!leg.fromLat || !leg.toLat) continue;
+      const color = LEG_COLORS[leg.walk ? 'walk' : leg.mode] || '#555';
+      const line  = L.polyline(
+        [[leg.fromLat, leg.fromLon], [leg.toLat, leg.toLon]],
+        { color, weight: leg.walk ? 3 : 5, opacity: 0.85, dashArray: leg.walk ? '6,6' : null }
+      ).addTo(map);
+      routeLines.push(line);
+      bounds.push([leg.fromLat, leg.fromLon], [leg.toLat, leg.toLon]);
+    }
+
+    // Markers for start and end
+    if (bounds.length) {
+      const first = journey.legs[0];
+      const last  = journey.legs[journey.legs.length - 1];
+      if (first.fromLat) {
+        routeLines.push(L.circleMarker([first.fromLat, first.fromLon], { radius:7, color:'#4ADE80', fillColor:'#4ADE80', fillOpacity:1, weight:2 }).addTo(map).bindPopup(`<strong>From:</strong> ${escHtml(first.from)}`));
+      }
+      if (last.toLat) {
+        routeLines.push(L.circleMarker([last.toLat, last.toLon], { radius:7, color:'#F87171', fillColor:'#F87171', fillOpacity:1, weight:2 }).addTo(map).bindPopup(`<strong>To:</strong> ${escHtml(last.to)}`));
+      }
+      map.fitBounds(bounds, { padding: [60, 360] });
+    }
+  }
+
+  function renderFloatJourneys(journeys, container) {
+    container.innerHTML = journeys.map((j, i) => {
+      const best = i === 0;
+      const chg  = j.interchanges === 0 ? 'Direct' : `${j.interchanges} change${j.interchanges > 1 ? 's':''}`;
+      const dur  = j.durationMin > 0 ? `${j.durationMin} min` : '';
+      const pills = j.legs.map(leg => {
+        if (leg.walk) return `<span class="float-leg-walk">🚶 walk</span>`;
+        const col = LINE_COLORS[leg.lineClass] || '#555';
+        const icon = MODE_META[leg.mode]?.icon || '🚌';
+        return `<span class="float-leg-pill" style="background:${col}">${icon} ${escHtml(leg.line || leg.mode)}</span>`;
+      }).join('<span style="color:#ccc;font-size:10px;margin:0 2px">›</span>');
+
+      return `<div class="float-journey${best?' best':''}" data-journey-idx="${i}">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span class="float-journey-times">${j.depTime} → ${j.arrTime}</span>
+          ${best ? '<span style="font-size:9px;font-weight:800;background:var(--navy);color:#fff;padding:2px 6px;border-radius:2px;letter-spacing:.08em">FASTEST</span>' : ''}
+        </div>
+        <div class="float-journey-meta">
+          <span>${dur}</span><span>·</span><span>${chg}</span>
+        </div>
+        <div class="float-leg-strip">${pills}</div>
+      </div>`;
+    }).join('');
+
+    // Click a journey card → draw that route
+    container.querySelectorAll('.float-journey').forEach(card => {
+      card.addEventListener('click', () => {
+        const idx = parseInt(card.dataset.journeyIdx);
+        drawRouteOnMap(journeys[idx]);
+      });
     });
   }
 

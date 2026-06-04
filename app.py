@@ -263,12 +263,18 @@ async def trip(
                 is_walk = bool(leg.get("isFootpathLeg"))
                 o       = leg.get("origin") or {}
                 d       = leg.get("destination") or {}
+                o_coord = o.get("coord") or [None, None]
+                d_coord = d.get("coord") or [None, None]
                 legs.append({
                     "mode":         "walk" if is_walk else mode_from_class(prod.get("class")),
                     "line":         code or "",
                     "lineClass":    "walk" if is_walk else line_class(code or ""),
                     "from":         o.get("name") or "",
+                    "fromLat":      o_coord[0],
+                    "fromLon":      o_coord[1],
                     "to":           d.get("name") or "",
+                    "toLat":        d_coord[0],
+                    "toLon":        d_coord[1],
                     "depTime":      to_hhmm(o.get("departureTimeEstimated") or o.get("departureTimePlanned") or ""),
                     "arrTime":      to_hhmm(d.get("arrivalTimeEstimated") or d.get("arrivalTimePlanned") or ""),
                     "durationSecs": leg.get("duration") or 0,

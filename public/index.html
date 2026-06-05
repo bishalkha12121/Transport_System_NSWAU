@@ -584,6 +584,37 @@
       padding: 24px 16px; text-align: center;
       color: var(--mid); font-size: 13px;
     }
+    .float-journey-detail {
+      display: none;
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+    .float-journey.expanded .float-journey-detail { display: block; }
+    .float-leg-step {
+      display: flex; gap: 10px; margin-bottom: 10px;
+      align-items: flex-start;
+    }
+    .float-leg-step:last-child { margin-bottom: 0; }
+    .float-step-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0; margin-top: 1px;
+    }
+    .float-step-body { flex: 1; min-width: 0; }
+    .float-step-title {
+      font-size: 12px; font-weight: 700; color: var(--ink);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .float-step-sub { font-size: 11px; color: var(--mid); margin-top: 2px; line-height: 1.5; }
+    .float-step-time {
+      font-family: var(--mono); font-size: 12px; font-weight: 600;
+      color: var(--ink); flex-shrink: 0; margin-top: 2px;
+    }
+    .float-step-connector {
+      width: 1px; background: var(--line); height: 12px;
+      margin: 2px 0 2px 14px;
+    }
     .float-ac {
       position: absolute; top: calc(100% + 4px); left: 18px; right: 0;
       background: var(--white); border-radius: 4px; z-index: 999;
@@ -1379,6 +1410,44 @@ loadFavourites();
     }
   }
 
+  function buildLegSteps(legs) {
+    return legs.map((leg, i) => {
+      const col  = LINE_COLORS[leg.lineClass] || '#888';
+      const icon = leg.walk ? '🚶' : (MODE_META[leg.mode]?.icon || '🚌');
+      const bg   = leg.walk ? '#f0f0f0' : col;
+      const connector = i < legs.length - 1
+        ? `<div class="float-step-connector"></div>` : '';
+
+      if (leg.walk) {
+        const mins = Math.round(leg.durationSecs / 60);
+        return `
+          <div class="float-leg-step">
+            <div class="float-step-icon" style="background:#f0f0f0">${icon}</div>
+            <div class="float-step-body">
+              <div class="float-step-title">Walk to ${escHtml(leg.to)}</div>
+              <div class="float-step-sub">${mins >= 1 ? mins + ' min walk' : 'Short walk'}${leg.distanceM ? ' · ' + leg.distanceM + 'm' : ''}</div>
+            </div>
+          </div>${connector}`;
+      }
+
+      return `
+        <div class="float-leg-step">
+          <div class="float-step-icon" style="background:${bg};color:#fff">${icon}</div>
+          <div class="float-step-body">
+            <div class="float-step-title">
+              <span style="background:${col};color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700;margin-right:5px">${escHtml(leg.line || leg.mode)}</span>
+              Board at ${escHtml(leg.from)}
+            </div>
+            <div class="float-step-sub">
+              Towards ${escHtml(leg.to)}<br>
+              Depart <strong>${leg.depTime}</strong> → Arrive <strong>${leg.arrTime}</strong>
+            </div>
+          </div>
+          <div class="float-step-time">${leg.depTime}</div>
+        </div>${connector}`;
+    }).join('');
+  }
+
   function renderFloatJourneys(journeys, container) {
     container.innerHTML = journeys.map((j, i) => {
       const best = i === 0;
@@ -1386,12 +1455,13 @@ loadFavourites();
       const dur  = j.durationMin > 0 ? `${j.durationMin} min` : '';
       const pills = j.legs.map(leg => {
         if (leg.walk) return `<span class="float-leg-walk">🚶 walk</span>`;
-        const col = LINE_COLORS[leg.lineClass] || '#555';
+        const col  = LINE_COLORS[leg.lineClass] || '#555';
         const icon = MODE_META[leg.mode]?.icon || '🚌';
         return `<span class="float-leg-pill" style="background:${col}">${icon} ${escHtml(leg.line || leg.mode)}</span>`;
       }).join('<span style="color:#ccc;font-size:10px;margin:0 2px">›</span>');
 
-      const arrivalNote = j.arrTime ? `Arrives ${j.arrTime}` : '';
+      const steps = buildLegSteps(j.legs);
+
       return `<div class="float-journey${best?' best':''}" data-journey-idx="${i}">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div style="display:flex;align-items:baseline;gap:8px">
@@ -1406,16 +1476,24 @@ loadFavourites();
           <span style="font-size:11px;color:var(--mid)">${chg}</span>
         </div>
         <div class="float-leg-strip">${pills}</div>
+        <div class="float-journey-detail">${steps}</div>
       </div>`;
     }).join('');
 
-    // Click a journey card → draw that route
+    // Click → toggle detail + draw route
     container.querySelectorAll('.float-journey').forEach(card => {
       card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.journeyIdx);
+        const idx      = parseInt(card.dataset.journeyIdx);
+        const isOpen   = card.classList.contains('expanded');
+        // Collapse all
+        container.querySelectorAll('.float-journey').forEach(c => c.classList.remove('expanded'));
+        if (!isOpen) card.classList.add('expanded');
         drawRouteOnMap(journeys[idx]);
       });
     });
+
+    // Auto-expand fastest
+    container.querySelector('.float-journey.best')?.classList.add('expanded');
   }
 
   /* ── Map fullscreen toggle ───────────────────────────────────────────────── */

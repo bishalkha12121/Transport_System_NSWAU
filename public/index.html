@@ -1391,13 +1391,19 @@ loadFavourites();
         return `<span class="float-leg-pill" style="background:${col}">${icon} ${escHtml(leg.line || leg.mode)}</span>`;
       }).join('<span style="color:#ccc;font-size:10px;margin:0 2px">›</span>');
 
+      const arrivalNote = j.arrTime ? `Arrives ${j.arrTime}` : '';
       return `<div class="float-journey${best?' best':''}" data-journey-idx="${i}">
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span class="float-journey-times">${j.depTime} → ${j.arrTime}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="float-journey-times">${j.depTime}</span>
+            <span style="color:#aaa;font-size:12px">→</span>
+            <span class="float-journey-times">${j.arrTime}</span>
+          </div>
           ${best ? '<span style="font-size:9px;font-weight:800;background:var(--navy);color:#fff;padding:2px 6px;border-radius:2px;letter-spacing:.08em">FASTEST</span>' : ''}
         </div>
-        <div class="float-journey-meta">
-          <span>${dur}</span><span>·</span><span>${chg}</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:20px;font-weight:700;color:var(--ink)">${dur}</span>
+          <span style="font-size:11px;color:var(--mid)">${chg}</span>
         </div>
         <div class="float-leg-strip">${pills}</div>
       </div>`;
@@ -1985,11 +1991,9 @@ loadFavourites();
     if (!fromStop) return showFieldError('fromWrap', 'Enter a starting point');
     if (!toStop)   return showFieldError('toWrap',   'Enter a destination');
 
-    const btn     = document.getElementById('planBtn');
-    const results = document.getElementById('tripResults');
+    const btn = document.getElementById('planBtn');
     btn.disabled  = true;
     btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:1.5px;border-top-color:#fff"></div> Planning…';
-    results.innerHTML = '<div class="trip-loading"><div class="spinner"></div>Finding the best routes…</div>';
 
     try {
       const params = new URLSearchParams({ toId: toStop.id });
@@ -2003,9 +2007,31 @@ loadFavourites();
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      renderJourneys(data.journeys || [], results);
+      const journeys = data.journeys || [];
+
+      // ── Go fullscreen and show results on the map ──
+      mapArea.classList.add('fullscreen');
+      setTimeout(() => map.invalidateSize(), 310);
+
+      // Pre-fill the floating panel inputs
+      floatFrom = fromStop;
+      floatTo   = toStop;
+      document.getElementById('floatFrom').value = fromStop.name;
+      document.getElementById('floatTo').value   = toStop.name;
+
+      // Show results in floating panel
+      const floatResults = document.getElementById('floatResults');
+      if (!journeys.length) {
+        floatResults.innerHTML = '<div class="float-empty">No routes found for this trip.</div>';
+      } else {
+        renderFloatJourneys(journeys, floatResults);
+        drawRouteOnMap(journeys[0]);
+      }
     } catch (e) {
-      results.innerHTML = `<div class="trip-empty"><div class="trip-empty-icon">⚠️</div>${escHtml(e.message)}</div>`;
+      document.getElementById('floatResults').innerHTML =
+        `<div class="float-empty">⚠️ ${escHtml(e.message)}</div>`;
+      mapArea.classList.add('fullscreen');
+      setTimeout(() => map.invalidateSize(), 310);
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M13 6l6 6-6 6"/></svg> Plan Trip';

@@ -698,299 +698,347 @@
     }
 
     /* ══════════════════════════════════════════
-       CLAYMORPHISM LAYER
-       Soft 3D puffy effect — added on top of
-       existing layout, nothing structural changed
+       CLAY SAND — Professional Claymorphism
+       Warm earthy palette · Deep soft shadows
+       Minimal borders · Maximum depth
     ══════════════════════════════════════════ */
 
-    /* Soft background */
+    /* ── Sand palette variables ── */
+    :root {
+      --sand-50:  #fdfaf5;
+      --sand-100: #f7f0e3;
+      --sand-200: #ede2cc;
+      --sand-300: #d4c4a8;
+      --clay-shadow: rgba(180,150,100,0.18);
+      --clay-light:  rgba(255,248,235,0.95);
+      --clay-inset:  rgba(255,255,255,0.7);
+    }
+
+    /* ── Background ── */
     body {
-      background: linear-gradient(145deg, #eef2ff 0%, #f8f6ff 40%, #e8f4ff 100%) !important;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(255,237,200,0.4) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(200,220,255,0.3) 0%, transparent 60%),
+        linear-gradient(160deg, #f5ede0 0%, #faf6ef 35%, #eff4fb 70%, #f5efe8 100%) !important;
+      min-height: 100vh;
     }
     html.dark body {
-      background: linear-gradient(145deg, #0d0d1a 0%, #111128 50%, #0a0f1e 100%) !important;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(60,40,20,0.5) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(20,30,60,0.5) 0%, transparent 60%),
+        linear-gradient(160deg, #1a1208 0%, #12110f 35%, #0c0e18 70%, #150f08 100%) !important;
     }
 
-    /* Topbar — clay glass */
+    /* ── Topbar ── */
     .topbar {
-      background: linear-gradient(135deg, #002e7a 0%, #002664 100%) !important;
-      box-shadow: 0 4px 24px rgba(0,38,100,0.25), inset 0 1px 0 rgba(255,255,255,0.1) !important;
-    }
-
-    /* Left panel */
-    .left-panel {
-      background: rgba(255,255,255,0.75) !important;
-      backdrop-filter: blur(12px);
-      box-shadow: 4px 0 24px rgba(0,0,0,0.06) !important;
-    }
-    html.dark .left-panel {
-      background: rgba(26,26,46,0.85) !important;
-    }
-
-    /* Right panel */
-    .right-panel {
-      background: rgba(255,255,255,0.75) !important;
-      backdrop-filter: blur(12px);
-      box-shadow: -4px 0 24px rgba(0,0,0,0.06) !important;
-    }
-    html.dark .right-panel {
-      background: rgba(26,26,46,0.85) !important;
-    }
-
-    /* Centre panel */
-    .centre-panel {
-      background: rgba(255,255,255,0.6) !important;
-      backdrop-filter: blur(8px);
-    }
-    html.dark .centre-panel {
-      background: rgba(15,15,35,0.7) !important;
-    }
-
-    /* Stop rows — clay cards */
-    .stop-row {
-      border-radius: 10px !important;
-      margin: 4px 8px !important;
-      border: none !important;
-      background: rgba(255,255,255,0.9) !important;
+      background: linear-gradient(135deg, #003080 0%, #002060 100%) !important;
       box-shadow:
-        4px 4px 10px rgba(0,0,0,0.07),
-        -2px -2px 6px rgba(255,255,255,0.9),
-        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
-      transition: transform 0.15s, box-shadow 0.15s !important;
+        0 4px 20px rgba(0,32,96,0.3),
+        0 1px 0 rgba(255,255,255,0.08) inset !important;
+      border-bottom: none !important;
+    }
+
+    /* ── Shell panels ── */
+    .left-panel {
+      background: rgba(253,248,240,0.82) !important;
+      backdrop-filter: blur(20px) saturate(1.4);
+      box-shadow: 6px 0 32px var(--clay-shadow) !important;
+      border-right: 1px solid rgba(210,185,150,0.25) !important;
+    }
+    .right-panel {
+      background: rgba(253,248,240,0.82) !important;
+      backdrop-filter: blur(20px) saturate(1.4);
+      box-shadow: -6px 0 32px var(--clay-shadow) !important;
+      border-left: 1px solid rgba(210,185,150,0.25) !important;
+    }
+    .centre-panel {
+      background: rgba(255,252,246,0.65) !important;
+      backdrop-filter: blur(12px);
+    }
+    html.dark .left-panel,
+    html.dark .right-panel {
+      background: rgba(22,17,10,0.88) !important;
+      box-shadow: 6px 0 32px rgba(0,0,0,0.4) !important;
+      border-color: rgba(80,60,30,0.3) !important;
+    }
+    html.dark .centre-panel { background: rgba(14,12,8,0.75) !important; }
+
+    /* ── Stop rows ── */
+    .stop-row {
+      border-radius: 14px !important;
+      margin: 4px 10px !important;
+      border: none !important;
+      background: var(--clay-light) !important;
+      box-shadow:
+        5px 5px 14px var(--clay-shadow),
+        -3px -3px 8px rgba(255,255,255,0.85),
+        inset 1px 1px 2px var(--clay-inset) !important;
+      transition: transform 0.18s, box-shadow 0.18s !important;
     }
     .stop-row:hover {
-      transform: translateY(-1px) !important;
+      transform: translateY(-2px) scale(1.01) !important;
       box-shadow:
-        6px 6px 16px rgba(0,0,0,0.1),
-        -2px -2px 8px rgba(255,255,255,0.9) !important;
-      background: #fff !important;
+        8px 8px 20px var(--clay-shadow),
+        -3px -3px 10px rgba(255,255,255,0.9) !important;
+      background: #fffdf8 !important;
     }
     .stop-row.active {
-      background: linear-gradient(135deg, #eef2ff, #e8f0ff) !important;
-      border-left: 3px solid var(--navy) !important;
+      background: linear-gradient(135deg, #eef3ff 0%, #e6eeff 100%) !important;
+      border-left: 3px solid #002664 !important;
       box-shadow:
-        4px 4px 12px rgba(0,38,100,0.12),
-        inset 1px 1px 2px rgba(255,255,255,0.7) !important;
+        5px 5px 16px rgba(0,38,100,0.14),
+        inset 1px 1px 3px rgba(255,255,255,0.7) !important;
     }
     html.dark .stop-row {
-      background: rgba(30,30,55,0.9) !important;
-      box-shadow: 4px 4px 12px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.04) !important;
+      background: rgba(35,26,14,0.92) !important;
+      box-shadow: 5px 5px 14px rgba(0,0,0,0.35), inset 1px 1px 2px rgba(255,255,255,0.04) !important;
     }
-    html.dark .stop-row:hover { background: rgba(40,40,70,0.95) !important; }
+    html.dark .stop-row:hover { background: rgba(48,36,18,0.95) !important; }
 
-    /* Mode buttons — puffy clay */
-    .mode-btn {
-      border-radius: 12px !important;
-      border: none !important;
-      background: rgba(255,255,255,0.9) !important;
-      box-shadow:
-        4px 4px 10px rgba(0,0,0,0.08),
-        -2px -2px 6px rgba(255,255,255,0.95),
-        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
-      transition: transform 0.15s, box-shadow 0.15s !important;
-    }
-    .mode-btn:hover { transform: translateY(-2px) !important; }
-    .mode-btn.on {
-      background: linear-gradient(135deg, #002e7a, #002664) !important;
-      color: #fff !important;
-      box-shadow:
-        4px 4px 12px rgba(0,38,100,0.3),
-        inset 1px 1px 2px rgba(255,255,255,0.15) !important;
-    }
-    html.dark .mode-btn {
-      background: rgba(30,30,60,0.9) !important;
-      box-shadow: 4px 4px 10px rgba(0,0,0,0.3), -2px -2px 6px rgba(255,255,255,0.03) !important;
-    }
-
-    /* Filter chips — clay */
+    /* ── Filter chips ── */
     .f-chip {
-      border-radius: 20px !important;
+      border-radius: 24px !important;
       border: none !important;
-      background: rgba(255,255,255,0.9) !important;
+      background: var(--clay-light) !important;
       box-shadow:
-        3px 3px 8px rgba(0,0,0,0.08),
-        -1px -1px 4px rgba(255,255,255,0.9) !important;
-      transition: transform 0.12s, box-shadow 0.12s !important;
+        3px 3px 9px var(--clay-shadow),
+        -2px -2px 5px rgba(255,255,255,0.85) !important;
+      transition: transform 0.15s, box-shadow 0.15s !important;
+      color: #6b5a3e !important;
+      font-weight: 600 !important;
     }
-    .f-chip:hover { transform: translateY(-1px) !important; }
+    .f-chip:hover { transform: translateY(-2px) !important; }
     .f-chip.on {
-      background: linear-gradient(135deg, #002e7a, #002664) !important;
+      background: linear-gradient(135deg, #003080, #002060) !important;
       color: #fff !important;
-      box-shadow: 3px 3px 10px rgba(0,38,100,0.3) !important;
+      box-shadow:
+        3px 3px 12px rgba(0,38,100,0.35),
+        inset 0 1px 2px rgba(255,255,255,0.15) !important;
     }
     html.dark .f-chip {
-      background: rgba(30,30,60,0.9) !important;
-      box-shadow: 3px 3px 8px rgba(0,0,0,0.3) !important;
+      background: rgba(38,28,14,0.92) !important;
+      color: #c8b08a !important;
+      box-shadow: 3px 3px 9px rgba(0,0,0,0.35) !important;
     }
 
-    /* Departure rows */
+    /* ── Departure rows ── */
     .dep-row {
-      border-radius: 10px !important;
-      margin: 3px 12px !important;
+      border-radius: 12px !important;
+      margin: 4px 14px !important;
       border: none !important;
-      background: rgba(255,255,255,0.85) !important;
+      background: rgba(255,252,244,0.88) !important;
       box-shadow:
-        3px 3px 8px rgba(0,0,0,0.05),
-        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
-      transition: transform 0.12s, box-shadow 0.12s !important;
+        4px 4px 12px var(--clay-shadow),
+        -2px -2px 6px rgba(255,255,255,0.8),
+        inset 1px 1px 1px rgba(255,255,255,0.6) !important;
+      transition: transform 0.15s, box-shadow 0.15s !important;
     }
     .dep-row:hover {
-      transform: translateX(2px) !important;
-      background: #fff !important;
-      box-shadow: 4px 4px 12px rgba(0,0,0,0.09) !important;
+      transform: translateX(3px) !important;
+      background: #fffdf8 !important;
+      box-shadow: 6px 4px 16px var(--clay-shadow) !important;
     }
     html.dark .dep-row {
-      background: rgba(25,25,50,0.9) !important;
-      box-shadow: 3px 3px 8px rgba(0,0,0,0.3) !important;
+      background: rgba(30,22,10,0.9) !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.35) !important;
     }
 
-    /* Line badge — clay pill */
+    /* ── Line badge ── */
     .line-badge {
-      border-radius: 20px !important;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.2) !important;
+      border-radius: 24px !important;
+      box-shadow:
+        2px 2px 8px rgba(0,0,0,0.2),
+        inset 0 1px 2px rgba(255,255,255,0.25) !important;
+      letter-spacing: 0.03em !important;
     }
 
-    /* Stat cells — clay cards */
+    /* ── Stat cells ── */
+    .stats-strip {
+      background: transparent !important;
+      gap: 4px !important;
+      padding: 4px !important;
+    }
     .stat-cell {
-      border-radius: 12px !important;
-      margin: 6px !important;
+      border-radius: 14px !important;
+      margin: 4px !important;
       border: none !important;
-      background: rgba(255,255,255,0.9) !important;
+      background: var(--clay-light) !important;
       box-shadow:
-        4px 4px 12px rgba(0,0,0,0.07),
-        -2px -2px 6px rgba(255,255,255,0.95),
-        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+        5px 5px 14px var(--clay-shadow),
+        -3px -3px 8px rgba(255,255,255,0.9),
+        inset 1px 1px 2px var(--clay-inset) !important;
     }
+    .stat-val { color: #002664 !important; }
     html.dark .stat-cell {
-      background: rgba(30,30,58,0.9) !important;
-      box-shadow: 4px 4px 12px rgba(0,0,0,0.3) !important;
+      background: rgba(32,24,10,0.92) !important;
+      box-shadow: 5px 5px 14px rgba(0,0,0,0.4) !important;
     }
+    html.dark .stat-val { color: #7aa4ff !important; }
 
-    /* Alert cards — clay */
+    /* ── Alert cards ── */
     .alert-card {
-      border-radius: 12px !important;
+      border-radius: 14px !important;
       margin: 6px 10px !important;
-      background: rgba(255,255,255,0.9) !important;
       border: none !important;
+      background: var(--clay-light) !important;
       box-shadow:
-        4px 4px 12px rgba(0,0,0,0.07),
-        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+        4px 4px 12px var(--clay-shadow),
+        -2px -2px 6px rgba(255,255,255,0.85),
+        inset 1px 1px 2px var(--clay-inset) !important;
     }
     html.dark .alert-card {
-      background: rgba(28,28,52,0.9) !important;
-      box-shadow: 4px 4px 12px rgba(0,0,0,0.3) !important;
+      background: rgba(30,22,10,0.92) !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.35) !important;
     }
 
-    /* Journey cards */
+    /* ── Journey cards ── */
     .journey-card {
-      border-radius: 12px !important;
-      margin: 6px 12px !important;
+      border-radius: 14px !important;
+      margin: 6px 14px !important;
       border: none !important;
-      background: rgba(255,255,255,0.9) !important;
+      background: var(--clay-light) !important;
       box-shadow:
-        4px 4px 12px rgba(0,0,0,0.06),
-        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
-      transition: transform 0.15s, box-shadow 0.15s !important;
+        5px 5px 14px var(--clay-shadow),
+        -3px -3px 8px rgba(255,255,255,0.85),
+        inset 1px 1px 2px var(--clay-inset) !important;
+      transition: transform 0.18s, box-shadow 0.18s !important;
     }
     .journey-card:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 6px 6px 18px rgba(0,0,0,0.1) !important;
+      transform: translateY(-3px) !important;
+      box-shadow:
+        8px 8px 22px var(--clay-shadow),
+        -3px -3px 10px rgba(255,255,255,0.9) !important;
     }
     .journey-card.best {
-      background: linear-gradient(135deg, rgba(240,244,255,0.95), rgba(232,240,255,0.9)) !important;
-      border-left: 3px solid var(--navy) !important;
-      box-shadow: 4px 4px 14px rgba(0,38,100,0.1), inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+      background: linear-gradient(145deg, #eef3ff 0%, #e6edff 100%) !important;
+      border-left: 3px solid #002664 !important;
+      box-shadow:
+        5px 5px 16px rgba(0,38,100,0.15),
+        inset 1px 1px 2px rgba(255,255,255,0.7) !important;
     }
     html.dark .journey-card {
-      background: rgba(28,28,52,0.9) !important;
-      box-shadow: 4px 4px 12px rgba(0,0,0,0.3) !important;
+      background: rgba(30,22,10,0.92) !important;
+      box-shadow: 5px 5px 14px rgba(0,0,0,0.4) !important;
     }
 
-    /* Search field — clay input */
+    /* ── Search field ── */
     .search-field {
-      border-radius: 12px !important;
+      border-radius: 14px !important;
       border: none !important;
-      background: rgba(255,255,255,0.9) !important;
+      background: rgba(255,250,240,0.9) !important;
       box-shadow:
-        inset 3px 3px 8px rgba(0,0,0,0.07),
-        inset -2px -2px 5px rgba(255,255,255,0.9),
-        2px 2px 6px rgba(255,255,255,0.6) !important;
+        inset 4px 4px 10px rgba(180,150,100,0.12),
+        inset -3px -3px 7px rgba(255,255,255,0.85) !important;
     }
     html.dark .search-field {
-      background: rgba(20,20,45,0.9) !important;
-      box-shadow: inset 3px 3px 8px rgba(0,0,0,0.3) !important;
+      background: rgba(22,16,6,0.92) !important;
+      box-shadow: inset 4px 4px 10px rgba(0,0,0,0.4) !important;
     }
 
-    /* Trip input — clay */
+    /* ── Trip input ── */
     .trip-input-wrap {
-      border-radius: 12px !important;
+      border-radius: 14px !important;
       border: none !important;
-      background: rgba(255,255,255,0.9) !important;
+      background: rgba(255,250,240,0.9) !important;
       box-shadow:
-        inset 3px 3px 7px rgba(0,0,0,0.06),
-        inset -2px -2px 5px rgba(255,255,255,0.9) !important;
+        inset 4px 4px 10px rgba(180,150,100,0.1),
+        inset -3px -3px 7px rgba(255,255,255,0.85) !important;
     }
     html.dark .trip-input-wrap {
-      background: rgba(20,20,45,0.9) !important;
-      box-shadow: inset 3px 3px 8px rgba(0,0,0,0.3) !important;
+      background: rgba(22,16,6,0.92) !important;
+      box-shadow: inset 4px 4px 10px rgba(0,0,0,0.4) !important;
     }
 
-    /* Plan Trip button — big clay */
+    /* ── Plan Trip button ── */
     .plan-btn {
-      border-radius: 14px !important;
-      background: linear-gradient(135deg, #002e7a, #002664) !important;
-      box-shadow:
-        4px 4px 14px rgba(0,38,100,0.35),
-        inset 0 1px 1px rgba(255,255,255,0.15) !important;
-      border: none !important;
-      transition: transform 0.15s, box-shadow 0.15s !important;
-    }
-    .plan-btn:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 6px 6px 20px rgba(0,38,100,0.4) !important;
-    }
-    .plan-btn:active { transform: translateY(0) !important; }
-
-    /* Map buttons */
-    .map-btn {
-      border-radius: 10px !important;
-      border: none !important;
-      box-shadow:
-        3px 3px 10px rgba(0,0,0,0.15),
-        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
-    }
-
-    /* Fav rows */
-    .fav-row {
-      border-radius: 8px !important;
-      margin: 3px 8px !important;
-      border: none !important;
-      background: rgba(255,255,255,0.8) !important;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.05) !important;
-    }
-    .fav-row:hover { background: #fff !important; transform: translateX(2px); }
-    html.dark .fav-row { background: rgba(28,28,52,0.8) !important; }
-
-    /* Settings sections */
-    .settings-section {
       border-radius: 16px !important;
       border: none !important;
-      background: rgba(255,255,255,0.85) !important;
+      background: linear-gradient(135deg, #003080 0%, #001f60 100%) !important;
       box-shadow:
-        6px 6px 16px rgba(0,0,0,0.07),
-        -3px -3px 10px rgba(255,255,255,0.95),
+        5px 5px 16px rgba(0,32,96,0.4),
+        -2px -2px 6px rgba(255,255,255,0.1),
+        inset 0 1px 2px rgba(255,255,255,0.15) !important;
+      transition: transform 0.18s, box-shadow 0.18s !important;
+    }
+    .plan-btn:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 7px 7px 22px rgba(0,32,96,0.45) !important;
+    }
+    .plan-btn:active { transform: translateY(0) scale(0.98) !important; }
+
+    /* ── Map buttons ── */
+    .map-btn {
+      border-radius: 12px !important;
+      border: none !important;
+      background: rgba(255,250,242,0.95) !important;
+      box-shadow:
+        4px 4px 12px var(--clay-shadow),
+        -2px -2px 6px rgba(255,255,255,0.9),
         inset 1px 1px 2px rgba(255,255,255,0.8) !important;
     }
-    html.dark .settings-section {
-      background: rgba(28,28,52,0.9) !important;
-      box-shadow: 6px 6px 16px rgba(0,0,0,0.3) !important;
+
+    /* ── Fav rows ── */
+    .fav-row {
+      border-radius: 12px !important;
+      margin: 3px 10px !important;
+      border: none !important;
+      background: rgba(255,250,240,0.85) !important;
+      box-shadow: 3px 3px 9px var(--clay-shadow), -2px -2px 5px rgba(255,255,255,0.8) !important;
+      transition: transform 0.15s !important;
+    }
+    .fav-row:hover {
+      background: #fffdf8 !important;
+      transform: translateX(3px) !important;
+    }
+    html.dark .fav-row {
+      background: rgba(32,24,10,0.88) !important;
+      box-shadow: 3px 3px 9px rgba(0,0,0,0.35) !important;
     }
 
-    /* Section headings strip */
-    .dir-heading {
-      border-radius: 8px !important;
-      margin: 4px 12px 2px !important;
+    /* ── Settings sections ── */
+    .settings-section {
+      border-radius: 18px !important;
+      border: none !important;
+      background: var(--clay-light) !important;
+      box-shadow:
+        6px 6px 18px var(--clay-shadow),
+        -4px -4px 12px rgba(255,255,255,0.92),
+        inset 1px 1px 3px rgba(255,255,255,0.8) !important;
     }
+    .settings-panel { background: #fdf8f0 !important; }
+    html.dark .settings-section {
+      background: rgba(30,22,10,0.92) !important;
+      box-shadow: 6px 6px 18px rgba(0,0,0,0.4) !important;
+    }
+    html.dark .settings-panel { background: #120e08 !important; }
+
+    /* ── Section headings ── */
+    .dir-heading {
+      border-radius: 10px !important;
+      margin: 6px 14px 3px !important;
+      background: rgba(245,235,215,0.7) !important;
+      border: none !important;
+    }
+    html.dark .dir-heading { background: rgba(40,30,12,0.8) !important; }
+
+    /* ── Board header ── */
+    .board-header {
+      background: rgba(255,252,244,0.9) !important;
+      border-bottom: 1px solid rgba(210,185,150,0.3) !important;
+    }
+    html.dark .board-header { background: rgba(18,14,6,0.9) !important; }
+
+    /* ── Panel labels ── */
+    .panel-label { color: #8a7055 !important; }
+
+    /* ── Scrollbars ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(180,150,100,0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(180,150,100,0.5); }
 
     /* ── Settings button ── */
     .settings-btn {

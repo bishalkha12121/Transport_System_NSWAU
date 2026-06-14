@@ -14,10 +14,12 @@ from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
-API_KEY       = os.environ.get("TFNSW_API_KEY", "")
-TFNSW         = "https://api.transport.nsw.gov.au/v1/tp"
-SUPABASE_URL  = os.environ.get("SUPABASE_URL", "")
-SUPABASE_ANON = os.environ.get("SUPABASE_ANON_KEY", "")
+API_KEY        = os.environ.get("TFNSW_API_KEY", "")
+TFNSW          = "https://api.transport.nsw.gov.au/v1/tp"
+SUPABASE_URL   = os.environ.get("SUPABASE_URL", "")
+SUPABASE_ANON  = os.environ.get("SUPABASE_ANON_KEY", "")
+DEEPSEEK_KEY   = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_URL   = "https://api.deepseek.com/chat/completions"
 
 app = FastAPI()
 
@@ -351,6 +353,67 @@ async def vehicles(mode: str = "bus"):
         return {"vehicles": result, "mode": mode}
     except Exception as e:
         print("vehicles:", e)
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ── /api/ai ───────────────────────────────────────────────────────────────────
+from fastapi import Body
+
+@app.post("/api/ai")
+async def ai_chat(payload: dict = Body(...)):
+    messages  = payload.get("messages", [])
+    context   = payload.get("context", {})
+
+    stop_name   = context.get("stopName", "Unknown stop")
+    departures  = context.get("departures", [])
+
+    dep_summary = "\n".join([
+        f"  - {d.get('line','?')} → {d.get('destination','?')} in {d.get('minsAway','?')} min"
+        f"{' (DELAYED +'+str(d['delay'])+' min)' if d.get('delay',0)>0 else ''}"
+        f"{' [CANCELLED]' if d.get('cancelled') else ''}"
+        for d in departures[:12]
+    ]) or "  No departures loaded."
+
+    system_prompt = f"""You are a smart, friendly Sydney public transport assistant built into the TfNSW Live Departures app.
+
+Current context:
+- Selected stop: {stop_name}
+- Live departures right now:
+{dep_summary}
+
+You can help users with:
+- Checking next departures and delays at the current stop
+- Trip planning between any two Sydney stops
+- Explaining train lines (T1–T9), buses, ferries, light rail
+- Opal card info, accessibility, station facilities
+- General Sydney transport advice
+
+Keep answers concise and practical. Use emojis sparingly for clarity (🚆 🚌 ⛴ 🚊).
+When recommending a trip, mention the line number, direction and approximate travel time.
+Always be helpful and positive. You are part of a college project (INF304) showcasing AI integration."""
+
+    if not DEEPSEEK_KEY:
+        return JSONResponse({"error": "AI not configured"}, status_code=503)
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            r = await c.post(
+                DEEPSEEK_URL,
+                headers={"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "deepseek-chat",
+                    "messages": [{"role": "system", "content": system_prompt}] + messages,
+                    "max_tokens": 500,
+                    "temperature": 0.7,
+                }
+            )
+        if r.status_code != 200:
+            return JSONResponse({"error": f"AI API error {r.status_code}"}, status_code=500)
+        data = r.json()
+        reply = data["choices"][0]["message"]["content"]
+        return {"reply": reply}
+    except Exception as e:
+        print("ai:", e)
         return JSONResponse({"error": str(e)}, status_code=500)
 
 

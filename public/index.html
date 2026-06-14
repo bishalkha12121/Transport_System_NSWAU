@@ -1134,6 +1134,190 @@
     }
     ::-webkit-scrollbar-thumb:hover { background: rgba(180,150,100,0.5); }
 
+    /* ── AI Assistant ── */
+    .ai-fab {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      border: none; cursor: pointer;
+      z-index: 800;
+      background: linear-gradient(145deg, #1a0a40, #2d1280, #1a0a40);
+      box-shadow:
+        6px 6px 20px rgba(80,20,180,0.45),
+        -3px -3px 10px rgba(255,255,255,0.08),
+        inset 2px 2px 4px rgba(255,255,255,0.12),
+        inset -2px -2px 4px rgba(0,0,0,0.3),
+        0 0 24px rgba(120,60,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: ai-pulse 3s ease-in-out infinite;
+    }
+    .ai-fab:hover {
+      transform: scale(1.1) translateY(-2px);
+      box-shadow:
+        8px 8px 28px rgba(80,20,180,0.55),
+        0 0 36px rgba(120,60,255,0.5);
+    }
+    .ai-fab.open { transform: scale(0.9) rotate(15deg); }
+    @keyframes ai-pulse {
+      0%,100% { box-shadow: 6px 6px 20px rgba(80,20,180,0.45), 0 0 24px rgba(120,60,255,0.3); }
+      50%      { box-shadow: 6px 6px 20px rgba(80,20,180,0.45), 0 0 40px rgba(120,60,255,0.55); }
+    }
+    .ai-tooltip {
+      position: fixed; bottom: 96px; right: 28px;
+      background: rgba(30,10,80,0.95);
+      color: #c4a8ff; font-size: 11px; font-weight: 600;
+      padding: 6px 12px; border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(80,20,180,0.3);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .ai-fab:hover + .ai-tooltip { opacity: 1; }
+
+    /* Chat panel */
+    .ai-panel {
+      position: fixed;
+      bottom: 100px; right: 28px;
+      width: 360px; height: 520px;
+      border-radius: 24px;
+      background: rgba(18,8,42,0.96);
+      backdrop-filter: blur(24px);
+      box-shadow:
+        12px 12px 40px rgba(60,10,160,0.4),
+        -6px -6px 20px rgba(255,255,255,0.04),
+        inset 1px 1px 2px rgba(255,255,255,0.08),
+        0 0 60px rgba(100,40,255,0.15);
+      border: 1px solid rgba(120,60,255,0.2);
+      z-index: 799;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.9) translateY(20px);
+      opacity: 0;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+    }
+    .ai-panel.open {
+      display: flex;
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+    .ai-panel-header {
+      padding: 16px 18px 12px;
+      background: linear-gradient(135deg, rgba(60,20,140,0.8), rgba(30,10,80,0.9));
+      border-bottom: 1px solid rgba(120,60,255,0.2);
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .ai-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #6030ff, #9060ff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 12px rgba(100,40,255,0.5), inset 1px 1px 2px rgba(255,255,255,0.2);
+    }
+    .ai-header-text { flex: 1; }
+    .ai-header-name { font-size: 13px; font-weight: 700; color: #d4b8ff; }
+    .ai-header-sub  { font-size: 10px; color: rgba(180,140,255,0.6); margin-top: 1px; }
+    .ai-online-dot  {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px rgba(74,222,128,0.6);
+      animation: gpspulse 2s infinite;
+    }
+    .ai-close {
+      background: rgba(255,255,255,0.08); border: none;
+      color: rgba(180,140,255,0.7); width: 26px; height: 26px;
+      border-radius: 50%; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .ai-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* Quick chips */
+    .ai-chips {
+      display: flex; gap: 6px; padding: 10px 12px 6px;
+      overflow-x: auto; flex-shrink: 0;
+    }
+    .ai-chips::-webkit-scrollbar { display: none; }
+    .ai-chip {
+      white-space: nowrap; padding: 5px 12px;
+      border-radius: 20px; border: 1px solid rgba(120,60,255,0.3);
+      background: rgba(60,20,120,0.4); color: #c4a8ff;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .ai-chip:hover { background: rgba(90,40,180,0.6); border-color: rgba(160,100,255,0.5); color: #e0ccff; }
+
+    /* Messages */
+    .ai-messages {
+      flex: 1; overflow-y: auto; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .ai-messages::-webkit-scrollbar { width: 3px; }
+    .ai-messages::-webkit-scrollbar-thumb { background: rgba(120,60,255,0.3); border-radius: 3px; }
+    .ai-msg {
+      max-width: 85%; padding: 10px 13px;
+      border-radius: 16px; font-size: 13px; line-height: 1.5;
+      word-break: break-word;
+    }
+    .ai-msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #5020c0, #3a0fa0);
+      color: #f0e8ff;
+      border-radius: 16px 16px 4px 16px;
+      box-shadow: 3px 3px 10px rgba(60,20,160,0.4);
+    }
+    .ai-msg.bot {
+      align-self: flex-start;
+      background: rgba(40,20,80,0.7);
+      color: #ddd0ff;
+      border: 1px solid rgba(100,50,200,0.2);
+      border-radius: 16px 16px 16px 4px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+    }
+    .ai-msg.typing { opacity: 0.6; }
+    .ai-dots span {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; background: #a080ff; margin: 0 2px;
+      animation: dot-bounce 1.2s infinite;
+    }
+    .ai-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dot-bounce {
+      0%,80%,100% { transform: translateY(0); }
+      40%          { transform: translateY(-6px); }
+    }
+
+    /* Input */
+    .ai-input-wrap {
+      padding: 10px 12px 14px;
+      display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+      border-top: 1px solid rgba(120,60,255,0.15);
+      background: rgba(20,8,50,0.6);
+    }
+    .ai-input {
+      flex: 1; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(120,60,255,0.25);
+      border-radius: 20px; padding: 9px 14px;
+      color: #e8d8ff; font-family: inherit; font-size: 13px;
+      outline: none; transition: border-color 0.15s;
+    }
+    .ai-input::placeholder { color: rgba(160,120,255,0.4); }
+    .ai-input:focus { border-color: rgba(160,100,255,0.6); }
+    .ai-send {
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, #6030ff, #4020c0);
+      color: #fff; cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 3px 3px 10px rgba(60,20,180,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .ai-send:hover { transform: scale(1.1); box-shadow: 4px 4px 14px rgba(60,20,180,0.55); }
+    .ai-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
     /* ── Welcome Ticker ── */
     .welcome-ticker {
       position: relative;
@@ -1757,6 +1941,37 @@
     <div class="app-footer">Built with AI integrations &nbsp;·&nbsp; INF304 &nbsp;·&nbsp; Transport data © TfNSW</div>
   </aside>
 
+</div>
+
+<!-- ── AI Assistant ── -->
+<button class="ai-fab" id="aiFab">🤖</button>
+<div class="ai-tooltip">Ask AI Assistant</div>
+
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <div class="ai-avatar">🤖</div>
+    <div class="ai-header-text">
+      <div class="ai-header-name">Transport AI</div>
+      <div class="ai-header-sub">Powered by DeepSeek · Always online</div>
+    </div>
+    <div class="ai-online-dot"></div>
+    <button class="ai-close" id="aiClose">✕</button>
+  </div>
+  <div class="ai-chips" id="aiChips">
+    <div class="ai-chip" data-q="What's the next departure from this stop?">🚆 Next departure</div>
+    <div class="ai-chip" data-q="Are there any delays or cancellations right now?">⚠️ Delays</div>
+    <div class="ai-chip" data-q="How do I get from Central Station to Manly?">🗺️ Plan a trip</div>
+    <div class="ai-chip" data-q="What lines run through this stop?">🔍 Lines here</div>
+    <div class="ai-chip" data-q="What's the fastest way to get to Sydney Airport?">✈️ Airport</div>
+    <div class="ai-chip" data-q="How does the Opal card work?">💳 Opal card</div>
+  </div>
+  <div class="ai-messages" id="aiMessages">
+    <div class="ai-msg bot">👋 Hi! I'm your Sydney transport assistant. I can see your current stop and live departures. Ask me anything — trip planning, delays, next services, or anything about Sydney's transport network!</div>
+  </div>
+  <div class="ai-input-wrap">
+    <input class="ai-input" id="aiInput" type="text" placeholder="Ask anything about transport…" autocomplete="off"/>
+    <button class="ai-send" id="aiSend">➤</button>
+  </div>
 </div>
 
 <!-- ── Settings Panel ── -->
@@ -2946,6 +3161,95 @@ loadFavourites();
       btn.textContent = isNowFaved ? '★' : '☆';
       btn.classList.toggle('starred', isNowFaved);
     });
+  }
+
+  /* ── AI Assistant ───────────────────────────────────────────────────────── */
+  const aiFab      = document.getElementById('aiFab');
+  const aiPanel    = document.getElementById('aiPanel');
+  const aiClose    = document.getElementById('aiClose');
+  const aiMessages = document.getElementById('aiMessages');
+  const aiInput    = document.getElementById('aiInput');
+  const aiSend     = document.getElementById('aiSend');
+  let aiHistory    = [];
+  let aiOpen       = false;
+
+  function toggleAI() {
+    aiOpen = !aiOpen;
+    aiFab.classList.toggle('open', aiOpen);
+    if (aiOpen) {
+      aiPanel.style.display = 'flex';
+      requestAnimationFrame(() => aiPanel.classList.add('open'));
+      aiInput.focus();
+    } else {
+      aiPanel.classList.remove('open');
+      setTimeout(() => { aiPanel.style.display = 'none'; }, 250);
+    }
+  }
+  aiFab.addEventListener('click', toggleAI);
+  aiClose.addEventListener('click', toggleAI);
+
+  // Quick chips
+  document.getElementById('aiChips').querySelectorAll('.ai-chip').forEach(chip => {
+    chip.addEventListener('click', () => sendAI(chip.dataset.q));
+  });
+
+  aiInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAI(); } });
+  aiSend.addEventListener('click', () => sendAI());
+
+  function appendMsg(text, role) {
+    const div = document.createElement('div');
+    div.className = `ai-msg ${role}`;
+    div.innerHTML = text.replace(/\n/g, '<br>');
+    aiMessages.appendChild(div);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    return div;
+  }
+
+  function typingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'ai-msg bot typing';
+    div.innerHTML = '<span class="ai-dots"><span></span><span></span><span></span></span>';
+    aiMessages.appendChild(div);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    return div;
+  }
+
+  async function sendAI(overrideText) {
+    const text = (overrideText || aiInput.value).trim();
+    if (!text) return;
+    aiInput.value = '';
+    aiSend.disabled = true;
+
+    appendMsg(escHtml(text), 'user');
+    aiHistory.push({ role: 'user', content: text });
+
+    const typing = typingIndicator();
+
+    try {
+      const res  = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: aiHistory,
+          context: {
+            stopName:   currentStopName,
+            departures: allDepartures,
+          }
+        })
+      });
+      const data = await res.json();
+      typing.remove();
+      if (data.error) throw new Error(data.error);
+      appendMsg(data.reply, 'bot');
+      aiHistory.push({ role: 'assistant', content: data.reply });
+      // Keep history to last 10 exchanges
+      if (aiHistory.length > 20) aiHistory = aiHistory.slice(-20);
+    } catch (e) {
+      typing.remove();
+      appendMsg(`⚠️ ${escHtml(e.message)}`, 'bot');
+    } finally {
+      aiSend.disabled = false;
+    }
   }
 
   /* ── Settings panel ─────────────────────────────────────────────────────── */

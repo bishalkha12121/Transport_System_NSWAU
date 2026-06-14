@@ -735,21 +735,23 @@
     html.dark body::before {
       background: rgba(10, 8, 4, 0.72);
     }
-    .shell, header.topbar { position: relative; z-index: 1; }
+    .shell { position: relative; z-index: 1; }
+    header.topbar { position: sticky; top: 0; z-index: 200; }
 
     /* ── Topbar — Fire ── */
     .topbar {
       background: linear-gradient(
         135deg,
-        #1a0500 0%,
-        #7a1500 15%,
-        #c43000 30%,
-        #e85000 45%,
-        #f07800 58%,
-        #e84800 70%,
-        #b02800 82%,
-        #6a1000 100%
+        rgba(26,5,0,0.82) 0%,
+        rgba(122,21,0,0.85) 15%,
+        rgba(196,48,0,0.88) 30%,
+        rgba(232,80,0,0.85) 45%,
+        rgba(240,120,0,0.82) 58%,
+        rgba(232,72,0,0.85) 70%,
+        rgba(176,40,0,0.88) 82%,
+        rgba(106,16,0,0.82) 100%
       ) !important;
+      backdrop-filter: blur(6px) saturate(1.5) !important;
       box-shadow:
         0 4px 32px rgba(220,80,0,0.5),
         0 8px 48px rgba(180,40,0,0.3),

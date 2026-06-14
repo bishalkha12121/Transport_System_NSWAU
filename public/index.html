@@ -737,14 +737,98 @@
     }
     .shell, header.topbar { position: relative; z-index: 1; }
 
-    /* ── Topbar ── */
+    /* ── Topbar — Fire ── */
     .topbar {
-      background: linear-gradient(135deg, #003080 0%, #002060 100%) !important;
+      background: linear-gradient(
+        135deg,
+        #1a0500 0%,
+        #7a1500 15%,
+        #c43000 30%,
+        #e85000 45%,
+        #f07800 58%,
+        #e84800 70%,
+        #b02800 82%,
+        #6a1000 100%
+      ) !important;
       box-shadow:
-        0 4px 20px rgba(0,32,96,0.3),
-        0 1px 0 rgba(255,255,255,0.08) inset !important;
+        0 4px 32px rgba(220,80,0,0.5),
+        0 8px 48px rgba(180,40,0,0.3),
+        inset 0 1px 0 rgba(255,200,100,0.2),
+        inset 0 -1px 0 rgba(100,20,0,0.4) !important;
       border-bottom: none !important;
+      position: relative !important;
+      overflow: hidden !important;
     }
+    .topbar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,160,50,0.06) 20%,
+        transparent 40%,
+        rgba(255,80,0,0.08) 60%,
+        transparent 80%
+      );
+      animation: flicker 3s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes flicker {
+      0%   { opacity: 0.6; transform: scaleY(1); }
+      33%  { opacity: 1;   transform: scaleY(1.01); }
+      66%  { opacity: 0.8; transform: scaleY(0.99); }
+      100% { opacity: 1;   transform: scaleY(1); }
+    }
+
+    /* NSW logo clay */
+    .nsw-logo {
+      background: linear-gradient(135deg, #fff8ee, #ffe8c0) !important;
+      color: #8a2000 !important;
+      border-radius: 6px !important;
+      box-shadow:
+        2px 2px 8px rgba(0,0,0,0.3),
+        inset 0 1px 2px rgba(255,255,255,0.8) !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.08em !important;
+    }
+
+    /* Wordmark clay text */
+    .wordmark {
+      text-shadow:
+        0 1px 3px rgba(0,0,0,0.4),
+        0 0 12px rgba(255,140,0,0.4) !important;
+      color: #ffe8c0 !important;
+    }
+    .wordmark-sep {
+      color: rgba(255,160,60,0.6) !important;
+      opacity: 1 !important;
+    }
+
+    /* Topbar tabs fire style */
+    .topbar-center {
+      background: rgba(0,0,0,0.25) !important;
+      border-radius: 10px !important;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.3), 0 1px 0 rgba(255,150,50,0.15) !important;
+    }
+    .topbar-tab { color: rgba(255,210,150,0.7) !important; }
+    .topbar-tab.active {
+      background: rgba(255,120,20,0.25) !important;
+      color: #ffe8c0 !important;
+    }
+    .topbar-tab:hover { color: #ffe0b0 !important; }
+
+    /* GPS indicator */
+    .gps-indicator { color: rgba(255,210,150,0.85) !important; }
+    .clock { color: #ffd090 !important; text-shadow: 0 0 8px rgba(255,120,0,0.4) !important; }
+
+    /* Settings btn fire */
+    .settings-btn {
+      background: rgba(0,0,0,0.2) !important;
+      color: #ffd090 !important;
+      border: 1px solid rgba(255,120,30,0.3) !important;
+    }
+    .settings-btn:hover { background: rgba(255,100,20,0.25) !important; }
 
     /* ── Shell panels ── */
     .left-panel {

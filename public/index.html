@@ -670,6 +670,301 @@
       letter-spacing: 0.02em;
     }
 
+    /* ══════════════════════════════════════════
+       CLAYMORPHISM LAYER
+       Soft 3D puffy effect — added on top of
+       existing layout, nothing structural changed
+    ══════════════════════════════════════════ */
+
+    /* Soft background */
+    body {
+      background: linear-gradient(145deg, #eef2ff 0%, #f8f6ff 40%, #e8f4ff 100%) !important;
+    }
+    html.dark body {
+      background: linear-gradient(145deg, #0d0d1a 0%, #111128 50%, #0a0f1e 100%) !important;
+    }
+
+    /* Topbar — clay glass */
+    .topbar {
+      background: linear-gradient(135deg, #002e7a 0%, #002664 100%) !important;
+      box-shadow: 0 4px 24px rgba(0,38,100,0.25), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+    }
+
+    /* Left panel */
+    .left-panel {
+      background: rgba(255,255,255,0.75) !important;
+      backdrop-filter: blur(12px);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.06) !important;
+    }
+    html.dark .left-panel {
+      background: rgba(26,26,46,0.85) !important;
+    }
+
+    /* Right panel */
+    .right-panel {
+      background: rgba(255,255,255,0.75) !important;
+      backdrop-filter: blur(12px);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.06) !important;
+    }
+    html.dark .right-panel {
+      background: rgba(26,26,46,0.85) !important;
+    }
+
+    /* Centre panel */
+    .centre-panel {
+      background: rgba(255,255,255,0.6) !important;
+      backdrop-filter: blur(8px);
+    }
+    html.dark .centre-panel {
+      background: rgba(15,15,35,0.7) !important;
+    }
+
+    /* Stop rows — clay cards */
+    .stop-row {
+      border-radius: 10px !important;
+      margin: 4px 8px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        4px 4px 10px rgba(0,0,0,0.07),
+        -2px -2px 6px rgba(255,255,255,0.9),
+        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+      transition: transform 0.15s, box-shadow 0.15s !important;
+    }
+    .stop-row:hover {
+      transform: translateY(-1px) !important;
+      box-shadow:
+        6px 6px 16px rgba(0,0,0,0.1),
+        -2px -2px 8px rgba(255,255,255,0.9) !important;
+      background: #fff !important;
+    }
+    .stop-row.active {
+      background: linear-gradient(135deg, #eef2ff, #e8f0ff) !important;
+      border-left: 3px solid var(--navy) !important;
+      box-shadow:
+        4px 4px 12px rgba(0,38,100,0.12),
+        inset 1px 1px 2px rgba(255,255,255,0.7) !important;
+    }
+    html.dark .stop-row {
+      background: rgba(30,30,55,0.9) !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.3), inset 1px 1px 2px rgba(255,255,255,0.04) !important;
+    }
+    html.dark .stop-row:hover { background: rgba(40,40,70,0.95) !important; }
+
+    /* Mode buttons — puffy clay */
+    .mode-btn {
+      border-radius: 12px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        4px 4px 10px rgba(0,0,0,0.08),
+        -2px -2px 6px rgba(255,255,255,0.95),
+        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
+      transition: transform 0.15s, box-shadow 0.15s !important;
+    }
+    .mode-btn:hover { transform: translateY(-2px) !important; }
+    .mode-btn.on {
+      background: linear-gradient(135deg, #002e7a, #002664) !important;
+      color: #fff !important;
+      box-shadow:
+        4px 4px 12px rgba(0,38,100,0.3),
+        inset 1px 1px 2px rgba(255,255,255,0.15) !important;
+    }
+    html.dark .mode-btn {
+      background: rgba(30,30,60,0.9) !important;
+      box-shadow: 4px 4px 10px rgba(0,0,0,0.3), -2px -2px 6px rgba(255,255,255,0.03) !important;
+    }
+
+    /* Filter chips — clay */
+    .f-chip {
+      border-radius: 20px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        3px 3px 8px rgba(0,0,0,0.08),
+        -1px -1px 4px rgba(255,255,255,0.9) !important;
+      transition: transform 0.12s, box-shadow 0.12s !important;
+    }
+    .f-chip:hover { transform: translateY(-1px) !important; }
+    .f-chip.on {
+      background: linear-gradient(135deg, #002e7a, #002664) !important;
+      color: #fff !important;
+      box-shadow: 3px 3px 10px rgba(0,38,100,0.3) !important;
+    }
+    html.dark .f-chip {
+      background: rgba(30,30,60,0.9) !important;
+      box-shadow: 3px 3px 8px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Departure rows */
+    .dep-row {
+      border-radius: 10px !important;
+      margin: 3px 12px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.85) !important;
+      box-shadow:
+        3px 3px 8px rgba(0,0,0,0.05),
+        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
+      transition: transform 0.12s, box-shadow 0.12s !important;
+    }
+    .dep-row:hover {
+      transform: translateX(2px) !important;
+      background: #fff !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.09) !important;
+    }
+    html.dark .dep-row {
+      background: rgba(25,25,50,0.9) !important;
+      box-shadow: 3px 3px 8px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Line badge — clay pill */
+    .line-badge {
+      border-radius: 20px !important;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.2) !important;
+    }
+
+    /* Stat cells — clay cards */
+    .stat-cell {
+      border-radius: 12px !important;
+      margin: 6px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        4px 4px 12px rgba(0,0,0,0.07),
+        -2px -2px 6px rgba(255,255,255,0.95),
+        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+    }
+    html.dark .stat-cell {
+      background: rgba(30,30,58,0.9) !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Alert cards — clay */
+    .alert-card {
+      border-radius: 12px !important;
+      margin: 6px 10px !important;
+      background: rgba(255,255,255,0.9) !important;
+      border: none !important;
+      box-shadow:
+        4px 4px 12px rgba(0,0,0,0.07),
+        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+    }
+    html.dark .alert-card {
+      background: rgba(28,28,52,0.9) !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Journey cards */
+    .journey-card {
+      border-radius: 12px !important;
+      margin: 6px 12px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        4px 4px 12px rgba(0,0,0,0.06),
+        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
+      transition: transform 0.15s, box-shadow 0.15s !important;
+    }
+    .journey-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 6px 6px 18px rgba(0,0,0,0.1) !important;
+    }
+    .journey-card.best {
+      background: linear-gradient(135deg, rgba(240,244,255,0.95), rgba(232,240,255,0.9)) !important;
+      border-left: 3px solid var(--navy) !important;
+      box-shadow: 4px 4px 14px rgba(0,38,100,0.1), inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+    }
+    html.dark .journey-card {
+      background: rgba(28,28,52,0.9) !important;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Search field — clay input */
+    .search-field {
+      border-radius: 12px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        inset 3px 3px 8px rgba(0,0,0,0.07),
+        inset -2px -2px 5px rgba(255,255,255,0.9),
+        2px 2px 6px rgba(255,255,255,0.6) !important;
+    }
+    html.dark .search-field {
+      background: rgba(20,20,45,0.9) !important;
+      box-shadow: inset 3px 3px 8px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Trip input — clay */
+    .trip-input-wrap {
+      border-radius: 12px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow:
+        inset 3px 3px 7px rgba(0,0,0,0.06),
+        inset -2px -2px 5px rgba(255,255,255,0.9) !important;
+    }
+    html.dark .trip-input-wrap {
+      background: rgba(20,20,45,0.9) !important;
+      box-shadow: inset 3px 3px 8px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Plan Trip button — big clay */
+    .plan-btn {
+      border-radius: 14px !important;
+      background: linear-gradient(135deg, #002e7a, #002664) !important;
+      box-shadow:
+        4px 4px 14px rgba(0,38,100,0.35),
+        inset 0 1px 1px rgba(255,255,255,0.15) !important;
+      border: none !important;
+      transition: transform 0.15s, box-shadow 0.15s !important;
+    }
+    .plan-btn:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 6px 6px 20px rgba(0,38,100,0.4) !important;
+    }
+    .plan-btn:active { transform: translateY(0) !important; }
+
+    /* Map buttons */
+    .map-btn {
+      border-radius: 10px !important;
+      border: none !important;
+      box-shadow:
+        3px 3px 10px rgba(0,0,0,0.15),
+        inset 1px 1px 2px rgba(255,255,255,0.9) !important;
+    }
+
+    /* Fav rows */
+    .fav-row {
+      border-radius: 8px !important;
+      margin: 3px 8px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.8) !important;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.05) !important;
+    }
+    .fav-row:hover { background: #fff !important; transform: translateX(2px); }
+    html.dark .fav-row { background: rgba(28,28,52,0.8) !important; }
+
+    /* Settings sections */
+    .settings-section {
+      border-radius: 16px !important;
+      border: none !important;
+      background: rgba(255,255,255,0.85) !important;
+      box-shadow:
+        6px 6px 16px rgba(0,0,0,0.07),
+        -3px -3px 10px rgba(255,255,255,0.95),
+        inset 1px 1px 2px rgba(255,255,255,0.8) !important;
+    }
+    html.dark .settings-section {
+      background: rgba(28,28,52,0.9) !important;
+      box-shadow: 6px 6px 16px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Section headings strip */
+    .dir-heading {
+      border-radius: 8px !important;
+      margin: 4px 12px 2px !important;
+    }
+
     /* ── Settings button ── */
     .settings-btn {
       width: 32px; height: 32px; border-radius: 50%;

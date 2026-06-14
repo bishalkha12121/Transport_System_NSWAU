@@ -19,6 +19,35 @@
       --ink:    #111111;
       --mid:    #555555;
       --line:   #E0E0E0;
+      --bg:     #ffffff;
+      --card:   #ffffff;
+      --shadow: rgba(0,0,0,0.08);
+    }
+    html.dark {
+      --white:  #1a1a2e;
+      --off:    #16213e;
+      --ink:    #e8e8e8;
+      --mid:    #9a9ab0;
+      --line:   #2e2e4a;
+      --bg:     #0f0f23;
+      --card:   #1a1a2e;
+      --shadow: rgba(0,0,0,0.4);
+    }
+    html.dark body { background: var(--bg); color: var(--ink); }
+    html.dark .topbar { background: #0a0a1a; }
+    html.dark .left-panel,
+    html.dark .right-panel,
+    html.dark .centre-panel { background: var(--card); }
+    html.dark .search-field,
+    html.dark .trip-input-wrap,
+    html.dark .form-input { background: var(--off); border-color: var(--line); color: var(--ink); }
+    html.dark .stop-row:hover,
+    html.dark .dep-row:hover,
+    html.dark .journey-card:hover { background: var(--off); }
+    html.dark .user-dropdown,
+    html.dark .ac-list { background: var(--card); border-color: var(--line); }
+    html.dark .user-dropdown-item { color: var(--ink); }
+    html.dark .dir-heading { background: var(--off); }
       --mono:   'JetBrains Mono', monospace;
       --sans:   'Inter', system-ui, sans-serif;
 
@@ -640,6 +669,109 @@
       flex-shrink: 0;
       letter-spacing: 0.02em;
     }
+
+    /* ── Settings button ── */
+    .settings-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.1); border: none;
+      color: rgba(255,255,255,0.8); font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.3s;
+      flex-shrink: 0;
+    }
+    .settings-btn:hover { background: rgba(255,255,255,0.2); }
+    .settings-btn.open { transform: rotate(90deg); }
+
+    /* ── Settings panel ── */
+    .settings-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 900;
+      backdrop-filter: blur(2px);
+    }
+    .settings-overlay.open { display: block; }
+    .settings-panel {
+      position: fixed; top: 0; right: -380px;
+      width: 360px; height: 100vh;
+      background: var(--card);
+      box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+      z-index: 901;
+      display: flex; flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto;
+    }
+    .settings-panel.open { right: 0; }
+    .settings-header {
+      background: var(--navy);
+      padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .settings-title { color: #fff; font-size: 16px; font-weight: 700; }
+    .settings-close {
+      background: rgba(255,255,255,0.15); border: none;
+      color: #fff; width: 30px; height: 30px; border-radius: 50%;
+      cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .settings-close:hover { background: rgba(255,255,255,0.25); }
+    .settings-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .settings-section {
+      background: var(--off);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+    }
+    .settings-section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--mid); margin-bottom: 14px;
+    }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .settings-row-label { font-size: 13px; font-weight: 500; color: var(--ink); }
+    .settings-row-sub { font-size: 11px; color: var(--mid); margin-top: 2px; }
+
+    /* Toggle switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+    .toggle-label { font-size: 12px; color: var(--mid); }
+    .toggle {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--line); border-radius: 24px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; top: 3px; left: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--navy); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    /* App info card */
+    .app-info-badge {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .app-info-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--navy); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .app-info-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+    .app-info-version { font-size: 11px; color: var(--mid); margin-top: 2px; }
     .section-head {
       padding: 12px 16px;
       font-size: 10px;
@@ -876,6 +1008,7 @@
       <span id="gpsIndicatorText">Sydney CBD  −33.8688, 151.2093</span>
     </div>
     <div class="clock" id="clock">10:42:00</div>
+    <button class="settings-btn" id="settingsBtn" title="Settings">⚙</button>
     <div class="user-menu" id="userMenu">
       <div class="user-avatar" id="userAvatar">?</div>
       <span class="user-name" id="userName">Loading…</span>
@@ -1073,6 +1206,90 @@
     <div class="app-footer">Built with AI integrations &nbsp;·&nbsp; INF304 &nbsp;·&nbsp; Transport data © TfNSW</div>
   </aside>
 
+</div>
+
+<!-- ── Settings Panel ── -->
+<div class="settings-overlay" id="settingsOverlay"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-header">
+    <div class="settings-title">⚙ Settings</div>
+    <button class="settings-close" id="settingsClose">✕</button>
+  </div>
+  <div class="settings-body">
+
+    <!-- Appearance -->
+    <div class="settings-section">
+      <div class="settings-section-title">Appearance</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Dark Mode</div>
+          <div class="settings-row-sub">Switch between light and dark theme</div>
+        </div>
+        <div class="toggle-wrap">
+          <span class="toggle-label" id="themeLabel">Light</span>
+          <label class="toggle">
+            <input type="checkbox" id="darkModeToggle"/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Info -->
+    <div class="settings-section">
+      <div class="settings-section-title">App Info</div>
+      <div class="app-info-badge">
+        <div class="app-info-icon">🚆</div>
+        <div>
+          <div class="app-info-name">TfNSW Live Departures</div>
+          <div class="app-info-version">Version 1.0 · INF304 Project</div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">Data Source</div>
+        <div style="font-size:12px;color:var(--mid)">Transport for NSW API</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">Map Provider</div>
+        <div style="font-size:12px;color:var(--mid)">OpenStreetMap + Leaflet</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">Database</div>
+        <div style="font-size:12px;color:var(--mid)">Supabase (PostgreSQL)</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">Deployed on</div>
+        <div style="font-size:12px;color:var(--mid)">Railway</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">Built with</div>
+        <div style="font-size:12px;color:var(--mid)">AI integrations</div>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div class="settings-section">
+      <div class="settings-section-title">Links</div>
+      <div class="settings-row">
+        <div class="settings-row-label">Live App</div>
+        <a href="https://transportsystemnswau-production.up.railway.app" target="_blank"
+           style="font-size:12px;color:var(--navy)">Open ↗</a>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-label">GitHub Repo</div>
+        <a href="https://github.com/bishalkha12121/Transport_System_NSWAU" target="_blank"
+           style="font-size:12px;color:var(--navy)">Open ↗</a>
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div style="font-size:10px;color:var(--mid);text-align:center;line-height:1.6;padding:0 4px">
+      This application is not developed for commercial purposes.<br>
+      Academic project for <strong>Project Management INF304</strong>.<br>
+      Transport data © Transport for NSW.
+    </div>
+
+  </div>
 </div>
 
 <script type="module">
@@ -2179,6 +2396,39 @@ loadFavourites();
       btn.classList.toggle('starred', isNowFaved);
     });
   }
+
+  /* ── Settings panel ─────────────────────────────────────────────────────── */
+  const settingsBtn     = document.getElementById('settingsBtn');
+  const settingsPanel   = document.getElementById('settingsPanel');
+  const settingsOverlay = document.getElementById('settingsOverlay');
+  const settingsClose   = document.getElementById('settingsClose');
+  const darkToggle      = document.getElementById('darkModeToggle');
+  const themeLabel      = document.getElementById('themeLabel');
+
+  function openSettings() {
+    settingsPanel.classList.add('open');
+    settingsOverlay.classList.add('open');
+    settingsBtn.classList.add('open');
+  }
+  function closeSettings() {
+    settingsPanel.classList.remove('open');
+    settingsOverlay.classList.remove('open');
+    settingsBtn.classList.remove('open');
+  }
+  settingsBtn.addEventListener('click', e => { e.stopPropagation(); openSettings(); });
+  settingsClose.addEventListener('click', closeSettings);
+  settingsOverlay.addEventListener('click', closeSettings);
+
+  // Dark mode
+  function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    themeLabel.textContent = dark ? 'Dark' : 'Light';
+    darkToggle.checked = dark;
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }
+  // Load saved preference
+  applyTheme(localStorage.getItem('theme') === 'dark');
+  darkToggle.addEventListener('change', () => applyTheme(darkToggle.checked));
 
   function showFieldError(wrapperId, msg) {
     const wrap = document.getElementById(wrapperId);

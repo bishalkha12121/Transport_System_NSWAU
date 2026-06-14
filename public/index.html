@@ -717,17 +717,25 @@
     /* ── Background ── */
     body {
       background:
-        radial-gradient(ellipse at 20% 20%, rgba(255,237,200,0.4) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 80%, rgba(200,220,255,0.3) 0%, transparent 60%),
-        linear-gradient(160deg, #f5ede0 0%, #faf6ef 35%, #eff4fb 70%, #f5efe8 100%) !important;
+        url('/background/background.png.png') center center / cover no-repeat fixed !important;
       min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: rgba(245, 235, 215, 0.45);
+      z-index: 0;
+      pointer-events: none;
     }
     html.dark body {
       background:
-        radial-gradient(ellipse at 20% 20%, rgba(60,40,20,0.5) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 80%, rgba(20,30,60,0.5) 0%, transparent 60%),
-        linear-gradient(160deg, #1a1208 0%, #12110f 35%, #0c0e18 70%, #150f08 100%) !important;
+        url('/background/background.png.png') center center / cover no-repeat fixed !important;
     }
+    html.dark body::before {
+      background: rgba(10, 8, 4, 0.72);
+    }
+    .shell, header.topbar { position: relative; z-index: 1; }
 
     /* ── Topbar ── */
     .topbar {
